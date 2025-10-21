@@ -44,3 +44,17 @@ def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
     df.columns = columns
 
     return df
+
+
+
+def load_dataframe_patadas(file_path: str) -> pd.DataFrame:
+    df = pd.read_csv(file_path)
+    return df
+
+def load_dataframe_inventario(file_path: str) -> pd.DataFrame:
+    df = pd.read_csv(file_path)
+    return df
+
+def load_dataframe_reporte(file_path: str) -> pd.DataFrame:
+    df = pd.read_csv(file_path)
+    return df
