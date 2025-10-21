@@ -1,6 +1,6 @@
 import pandas as pd
 
-def load_dataframe(file_path: str) -> pd.DataFrame:
+def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
     df = pd.read_csv(file_path, header=[0,1], skiprows=[1])
 
     # O si necesitas crear la estructura manualmente, puedes usar esto:
@@ -43,4 +43,18 @@ def load_dataframe(file_path: str) -> pd.DataFrame:
 
     df.columns = columns
 
+    return df
+
+
+
+def load_dataframe_patadas(file_path: str) -> pd.DataFrame:
+    df = pd.read_csv(file_path)
+    return df
+
+def load_dataframe_inventario(file_path: str) -> pd.DataFrame:
+    df = pd.read_csv(file_path)
+    return df
+
+def load_dataframe_reporte(file_path: str) -> pd.DataFrame:
+    df = pd.read_csv(file_path)
     return df
