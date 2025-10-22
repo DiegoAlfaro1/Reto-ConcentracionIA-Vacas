@@ -3,7 +3,7 @@ import pandas as pd
 def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
     df = pd.read_csv(file_path, header=[0,1], skiprows=[1])
 
-    # O si necesitas crear la estructura manualmente, puedes usar esto:
+    # Definir nombres de columnas multiíndice
     columns = pd.MultiIndex.from_tuples([
         ('ID', 'ID Vaca'),
         ('Main', 'Hora de inicio'),
@@ -42,6 +42,28 @@ def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
     ])
 
     df.columns = columns
+    # Eliminar columna innecesaria
+    df = df.drop([('Misc','Razón de la desviación')], axis = 1)
+
+    # Separar columnas de fecha y hora
+    
+    df[('Fecha y hora de inicio','fecha')] = df[('Main', 'Hora de inicio')].str.split(' ').str[0]
+    df[('Fecha y hora de inicio','fecha')] = pd.to_datetime(df[('Fecha y hora de inicio','fecha')], format='%d/%m/%Y')
+    df[('Fecha y hora de inicio','hora')] = (
+        df[('Main', 'Hora de inicio')]
+        .str.split(' ')
+        .str[1:]
+        .str.join(' ')
+        .str.replace("a. m.", "AM")
+        .str.replace("p. m.", "PM")
+        
+    )
+    df[('Fecha y hora de inicio','hora')] = pd.to_datetime(df[('Fecha y hora de inicio','hora')], format="%I:%M %p").dt.time
+    df = df.drop([('Main', 'Hora de inicio')], axis = 1)
+
+
+    df = df.fillna(0)
+    
 
     return df
 
