@@ -43,6 +43,9 @@ def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
 
     df.columns = columns
     # Eliminar columna innecesaria
+
+    df[('ID', 'ID Vaca')] = df[('ID', 'ID Vaca')].astype(int)
+
     df = df.drop([('Misc','Razón de la desviación')], axis = 1)
 
     # Separar columnas de fecha y hora
@@ -77,6 +80,8 @@ def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
     produccionesColumns = df.xs('Producciones (kg)', axis=1, level=0)
     df[('Producciones (kg)', 'Total')] = produccionesColumns.sum(axis=1)
 
+    sangreColumns = df.xs('Sangre (ppm)', axis=1, level=0)
+    df[('Sangre (ppm)', 'Total')] = sangreColumns.sum(axis=1)
 
     # Reordenar las columnas para mayor claridad
 
