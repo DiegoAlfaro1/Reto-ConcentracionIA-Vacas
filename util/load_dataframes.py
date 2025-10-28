@@ -43,6 +43,9 @@ def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
 
     df.columns = columns
     # Eliminar columna innecesaria
+
+    df[('ID', 'ID Vaca')] = df[('ID', 'ID Vaca')].astype(int)
+
     df = df.drop([('Misc','Razón de la desviación')], axis = 1)
 
     # Separar columnas de fecha y hora
@@ -61,9 +64,51 @@ def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
     df[('Fecha y hora de inicio','hora')] = pd.to_datetime(df[('Fecha y hora de inicio','hora')], format="%I:%M %p").dt.time
     df = df.drop([('Main', 'Hora de inicio')], axis = 1)
 
-
+    # Llenar valores nulos con 0
     df = df.fillna(0)
     
+    # Crear columnas de totales para las columnas que involucran a cada cuarto.
+    mediaFlujosColumns = df.xs('Media de los flujos (kg/min)', axis=1, level=0)
+    df[('Media de los flujos (kg/min)', 'Total')] = mediaFlujosColumns.sum(axis=1)
+
+    conductividadColumns = df.xs('Conductividad (mS / cm)', axis=1, level=0)
+    df[('Conductividad (mS / cm)', 'Total')] = conductividadColumns.sum(axis=1)
+        
+    maxFlujosColumns = df.xs('Flujos máximos (kg/min)', axis=1, level=0)
+    df[('Flujos máximos (kg/min)', 'Total')] = maxFlujosColumns.sum(axis=1)
+
+    produccionesColumns = df.xs('Producciones (kg)', axis=1, level=0)
+    df[('Producciones (kg)', 'Total')] = produccionesColumns.sum(axis=1)
+
+    sangreColumns = df.xs('Sangre (ppm)', axis=1, level=0)
+    df[('Sangre (ppm)', 'Total')] = sangreColumns.sum(axis=1)
+
+    # Reordenar las columnas para mayor claridad
+
+    columnOrder = [
+        'ID',
+        'Fecha y hora de inicio',
+        'Main',
+        'Estado',
+        'Media de los flujos (kg/min)',
+        'Sangre (ppm)',
+        'Conductividad (mS / cm)',
+        'Flujos máximos (kg/min)',
+        'Producciones (kg)',
+        'Misc'
+    ]
+
+    new_cols = []
+    for top in columnOrder:
+        new_cols.extend([c for c in df.columns if c[0] == top])
+
+    # Añadir cualquier columna sobrante (que no esté en columnOrder) al final
+    remaining = [c for c in df.columns if c not in new_cols]
+    new_cols.extend(remaining)
+
+    df = df.loc[:, new_cols]
+
+
 
     return df
 
