@@ -1,5 +1,10 @@
 # Datos del proyecto
 datos/
+*.csv
+*.xlsx
+*.pdf
+*.docx
+*.pptx
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
