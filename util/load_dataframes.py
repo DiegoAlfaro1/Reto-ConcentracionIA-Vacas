@@ -7,10 +7,10 @@ def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
     columns = pd.MultiIndex.from_tuples([
         ('ID', 'ID Vaca'),
         ('Main', 'Hora de inicio'),
-        ('Main', 'Acción'),
-        ('Main', 'Duración (mm:ss)'),
-        ('Main', 'Producción (kg)'),
-        ('Estado', 'Número de ordeño'),
+        ('Main', 'Accion'),
+        ('Main', 'Duracion (mm:ss)'),
+        ('Main', 'Produccion (kg)'),
+        ('Estado', 'Numero de ordeño'),
         ('Estado', 'Patada'),
         ('Estado', 'Incompleto'),
         ('Estado', 'Pezones no encontrados'),
@@ -30,15 +30,15 @@ def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
         ('Conductividad (mS / cm)', 'TD'),
         ('Misc', 'EO/PO'),
         ('Misc', 'Destino Leche'),
-        ('Flujos máximos (kg/min)', 'DI'),
-        ('Flujos máximos (kg/min)', 'DD'),
-        ('Flujos máximos (kg/min)', 'TI'),
-        ('Flujos máximos (kg/min)', 'TD'),
+        ('Flujos maximos (kg/min)', 'DI'),
+        ('Flujos maximos (kg/min)', 'DD'),
+        ('Flujos maximos (kg/min)', 'TI'),
+        ('Flujos maximos (kg/min)', 'TD'),
         ('Producciones (kg)', 'DI'),
         ('Producciones (kg)', 'DD'),
         ('Producciones (kg)', 'TI'),
         ('Producciones (kg)', 'TD'),
-        ('Misc', 'Razón de la desviación')
+        ('Misc', 'Razon de la desviacion')
     ])
 
     df.columns = columns
@@ -46,7 +46,7 @@ def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
 
     df[('ID', 'ID Vaca')] = df[('ID', 'ID Vaca')].astype(int)
 
-    df = df.drop([('Misc','Razón de la desviación')], axis = 1)
+    df = df.drop([('Misc','Razon de la desviacion')], axis = 1)
 
     # Separar columnas de fecha y hora
     
@@ -64,6 +64,11 @@ def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
     df[('Fecha y hora de inicio','hora')] = pd.to_datetime(df[('Fecha y hora de inicio','hora')], format="%I:%M %p").dt.time
     df = df.drop([('Main', 'Hora de inicio')], axis = 1)
 
+
+    # Convertir columna de duración a time de pandas
+
+    df[('Main', 'Duracion (mm:ss)')] = pd.to_timedelta('00:' + df[('Main', 'Duracion (mm:ss)')])
+
     # Llenar valores nulos con 0
     df = df.fillna(0)
     
@@ -74,8 +79,8 @@ def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
     conductividadColumns = df.xs('Conductividad (mS / cm)', axis=1, level=0)
     df[('Conductividad (mS / cm)', 'Total')] = conductividadColumns.sum(axis=1)
         
-    maxFlujosColumns = df.xs('Flujos máximos (kg/min)', axis=1, level=0)
-    df[('Flujos máximos (kg/min)', 'Total')] = maxFlujosColumns.sum(axis=1)
+    maxFlujosColumns = df.xs('Flujos maximos (kg/min)', axis=1, level=0)
+    df[('Flujos maximos (kg/min)', 'Total')] = maxFlujosColumns.sum(axis=1)
 
     produccionesColumns = df.xs('Producciones (kg)', axis=1, level=0)
     df[('Producciones (kg)', 'Total')] = produccionesColumns.sum(axis=1)
@@ -93,7 +98,7 @@ def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
         'Media de los flujos (kg/min)',
         'Sangre (ppm)',
         'Conductividad (mS / cm)',
-        'Flujos máximos (kg/min)',
+        'Flujos maximos (kg/min)',
         'Producciones (kg)',
         'Misc'
     ]
