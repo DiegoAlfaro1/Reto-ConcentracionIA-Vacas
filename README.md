@@ -2,6 +2,8 @@
 
 ## Equipo
 
+### Concentrados
+
 Daniel Queijeiro Albo - A01710441
 
 Diego Alfaro Pinto - A01709971
@@ -15,10 +17,15 @@ Mauricio Anguiano Juarez - A01703337
 Luis Adrián Uribe Cruz - A01783129
 
 
-## Links importantes
+## Indice de links
 
-Indice de documentos del proyecto
-https://docs.google.com/document/d/1T3OYqLs6bp0mpNbWSwZWNzy4HwuqY9HIyPhlONydFH8/edit?usp=drive_link
+- [`Business Understanding`](https://docs.google.com/document/d/1ARz_uvq6XoDpw--jkj5Ycz5t_F1_23TjBtyNBFguUvo/edit?usp=drive_link)
+- [`Data Understanding`](https://docs.google.com/document/d/1gg4wXKL5Xer1dtNStgGxF8hR__HBRHhscCtg1XF-bZ4/edit?usp=drive_link)
+- [`Data Preparation`](https://docs.google.com/document/d/1MMzRR5AxOEOnzVbFJ6VK1FZxMVcmvz54ozA-U6968l8/edit?usp=drive_link)
+- [`Modelado`](https://docs.google.com/document/d/1ij_Z6rscloFkTmMU2RQvtyWRKz3KUUbD3AR-JPQDoO0/edit?usp=drive_link)
+- [`Plan de valor ganado`](https://docs.google.com/spreadsheets/d/12ubunIKMkxzAnnMMdO_UpgfDZ-DNtL5uD4X8DdFFTCw/edit?usp=drive_link)
+
+[Link](https://drive.google.com/drive/u/1/folders/1E_7hHlKTfgszawLt3X5qVyLl47rKrEi5) a la carpeta completa de drive
 
 ## Configuración del entorno virtual (venv)
 
