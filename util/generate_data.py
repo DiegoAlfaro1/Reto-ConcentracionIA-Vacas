@@ -1,10 +1,7 @@
 import pandas as pd
 import numpy as np
-from load_dataframes import load_dataframe_vacas
 
-
-def fill_missing_data(file_path: str) -> pd.DataFrame:
-    df = load_dataframe_vacas(file_path)
+def fill_missing_data(df: pd.DataFrame) -> pd.DataFrame:
     
     # Crear una copia para evitar modificar el dataframe original
     df_original = df.copy()
@@ -132,23 +129,23 @@ def fill_missing_data(file_path: str) -> pd.DataFrame:
     return df_final
 
 
-if __name__ == "__main__":
-    # Ejemplo de uso
-    file_path = "datos/registros_sesiones_merged.csv"
+# if __name__ == "__main__":
+#     # Ejemplo de uso
+#     file_path = "datos/registros_sesiones_merged.csv"
     
-    # Cargar datos originales (después de load_dataframe_vacas)
-    df_original = load_dataframe_vacas(file_path)
+#     # Cargar datos originales (después de load_dataframe_vacas)
+#     df_original = load_dataframe_vacas(file_path)
     
-    # Exportar CSV de datos originales
-    output_path_original = "datos/datos_despues_de_load.csv"
-    df_original.to_csv(output_path_original, index=False)
-    print(f"✓ Datos originales exportados a: {output_path_original}\n")
+#     # Exportar CSV de datos originales
+#     output_path_original = "datos/datos_despues_de_load.csv"
+#     df_original.to_csv(output_path_original, index=False)
+#     print(f"✓ Datos originales exportados a: {output_path_original}\n")
     
-    # Aplicar fill_missing_data
-    print("Aplicando fill_missing_data...")
-    df_filled = fill_missing_data(file_path)
+#     # Aplicar fill_missing_data
+#     print("Aplicando fill_missing_data...")
+#     df_filled = fill_missing_data(file_path)
 
-    # Exportar CSV de datos rellenados
-    output_path_filled = "datos/datos_despues_de_fill.csv"
-    df_filled.to_csv(output_path_filled, index=False)
-    print(f"✓ Datos rellenados exportados a: {output_path_filled}")
+#     # Exportar CSV de datos rellenados
+#     output_path_filled = "datos/datos_despues_de_fill.csv"
+#     df_filled.to_csv(output_path_filled, index=False)
+#     print(f"✓ Datos rellenados exportados a: {output_path_filled}")
