@@ -1,5 +1,6 @@
 # Datos del proyecto
 datos/
+figuras_por_vaca/
 *.csv
 *.xlsx
 *.pdf
