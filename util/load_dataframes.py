@@ -1,5 +1,8 @@
 import pandas as pd
 
+from statsmodels.nonparametric.smoothers_lowess import lowess
+
+
 def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
     df = pd.read_csv(file_path, header=[0,1], skiprows=[1])
 
@@ -84,6 +87,12 @@ def load_dataframe_vacas(file_path: str) -> pd.DataFrame:
 
     produccionesColumns = df.xs('Producciones (kg)', axis=1, level=0)
     df[('Producciones (kg)', 'Total')] = produccionesColumns.sum(axis=1)
+
+
+
+    # df[('Producciones (kg)', 'Suavizado')] = df[('Producciones (kg)', 'Total')].rolling(window=7, center=True).mean()
+
+    df[('Producciones (kg)', 'Suavizado')] = lowess(df['Producciones (kg)', 'Total'], df[('Fecha y hora de inicio','fecha')], frac=0.1)[:,1]
 
     sangreColumns = df.xs('Sangre (ppm)', axis=1, level=0)
     df[('Sangre (ppm)', 'Total')] = sangreColumns.sum(axis=1)
