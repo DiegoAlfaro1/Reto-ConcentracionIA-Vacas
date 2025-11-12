@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "headers": {
+    "Content-Type": "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW"
+  },
+  "body": "LS0tLS0tV2ViS2l0Rm9ybUJvdW5kYXJ5N01BNFlXeGtUclp1MGdXDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0iZGF0b3MuY3N2Ig0KQ29udGVudC1UeXBlOiB0ZXh0L2Nzdg0KDQpuYW1lLHZhbHVlDQpBZGEsMTINCkJvYiwyMw0KQ2FybGEsMzINCi0tLS0tLVdlYktpdEZvcm1Cb3VuZGFyeTdNQTRZV3hrVHJadTBnVy0tDQo=",
+  "isBase64Encoded": true
+}
