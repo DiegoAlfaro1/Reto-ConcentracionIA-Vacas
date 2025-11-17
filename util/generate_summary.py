@@ -303,9 +303,12 @@ def generate_summary(dataFrame: pd.DataFrame) -> pd.DataFrame:
 
     df_final = df_final.reset_index()
 
-    dropedColumns = [('Datos Generados', 'NoEncontradosID_ID Vaca'), ('Datos Generados', 'id_vaca')]
+    dropedColumns = [('Datos Generados', 'NoEncontradosID_ID Vaca'), ('Datos Generados', 'id_vaca'), ('Datos Generados', 'PrimeraFecha'), ('Datos Generados', 'UltimaFecha')]
 
     df_final = df_final.drop(columns=dropedColumns, axis=1)
+
+    df_final[('Datos Generados', 'DuracionPromedio')] = df_final[('Datos Generados', 'DuracionPromedio')].dt.total_seconds()
+    # df_final[('Main', 'Duracion_horas')] = df_final[('Main', 'Duracion (mm:ss)')].dt.total_seconds() / 3600
 
     df_final = df_final.fillna(0)
     
