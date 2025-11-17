@@ -18,7 +18,7 @@ def generate_summary(dataFrame: pd.DataFrame) -> pd.DataFrame:
     datosPorVaca.columns = ['PrimeraFecha', 'UltimaFecha']
 
     # Obtener cantidad de días entre la primera y última fecha
-    datosPorVaca['DiasTotales'] = (datosPorVaca['UltimaFecha'] - datosPorVaca['PrimeraFecha']).dt.days
+    datosPorVaca['DiasTotales'] = (datosPorVaca['UltimaFecha'] - datosPorVaca['PrimeraFecha']).dt.days + 1
 
     # Obtener total de ordeños
     datosPorVaca['OrdeñosTotales'] = dataFrame.groupby(('ID', 'ID Vaca'))[[('Main', 'Accion')]].count()
@@ -303,6 +303,12 @@ def generate_summary(dataFrame: pd.DataFrame) -> pd.DataFrame:
 
     df_final = df_final.reset_index()
 
+    dropedColumns = [('Datos Generados', 'NoEncontradosID_ID Vaca'), ('Datos Generados', 'id_vaca')]
+
+    df_final = df_final.drop(columns=dropedColumns, axis=1)
+
+    df_final = df_final.fillna(0)
+    
     return df_final
 
 
