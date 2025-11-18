@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import joblib 
 
 from sklearn.ensemble import IsolationForest
 from sklearn.impute import SimpleImputer
@@ -13,12 +14,14 @@ from sklearn.model_selection import KFold
 
 
 CSV_HEALTH = "../data/sessions_health.csv"
-RESULTS_DIR = "../results"  # o "results" si corres desde la raíz
+RESULTS_DIR = "../results"
+MODELS_DIR = "../models"
 
 
 def main():
-    # Crear directorio de resultados
+    # Crear directorios de resultados y modelos
     os.makedirs(RESULTS_DIR, exist_ok=True)
+    os.makedirs(MODELS_DIR, exist_ok=True)
 
     print(f"Leyendo dataset de sanidad: {CSV_HEALTH}")
     X = pd.read_csv(CSV_HEALTH)
@@ -92,7 +95,7 @@ def main():
     print(f"Gráfica de porcentaje de anomalías guardada en: {out_path}")
 
     # ------------------------
-    # Entrenar modelo final
+    # Entrenar IsolationForest final con todos los datos
     # ------------------------
     print("\nEntrenando IsolationForest final con todos los datos...")
     iso_pipeline.fit(X)
@@ -134,7 +137,12 @@ def main():
     plt.close(fig)
     print(f"Histograma de anomaly_score guardado en: {out_path}")
 
-    # Opcional: guardar dataset enriquecido
+    # Guardar el pipeline completo (imputer + scaler + IsolationForest)
+    model_path = os.path.join(MODELS_DIR, "iso_sanidad_pipeline.joblib")
+    joblib.dump(iso_pipeline, model_path)
+    print(f"Pipeline de Isolation Forest guardado en: {model_path}")
+
+    # Opcional: guardar dataset enriquecido con scores
     # df_results.to_csv("../data/sessions_health_with_iso.csv", index=False)
     print("\nModelo IsolationForest entrenado y aplicado a todas las sesiones.")
 

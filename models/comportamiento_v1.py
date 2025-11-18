@@ -5,6 +5,7 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import joblib
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
@@ -14,12 +15,14 @@ from sklearn.model_selection import StratifiedKFold, cross_validate
 
 
 CSV_BEHAVIOR = "../data/sessions_behavior.csv"
-RESULTS_DIR = "../results"  # o "results" si corres desde la raíz del proyecto
+RESULTS_DIR = "../results"
+MODELS_DIR = "../models"
 
 
 def main():
-    # Crear directorio de resultados
+    # Crear directorios de resultados y modelos
     os.makedirs(RESULTS_DIR, exist_ok=True)
+    os.makedirs(MODELS_DIR, exist_ok=True)
 
     print(f"Leyendo dataset de comportamiento: {CSV_BEHAVIOR}")
     df = pd.read_csv(CSV_BEHAVIOR)
@@ -130,10 +133,17 @@ def main():
     plt.close(fig)
     print(f"Gráfica de métricas por fold guardada en: {out_path}")
 
+    # ---------------------------------------------------
     # Entrenar modelo final con todos los datos
+    # ---------------------------------------------------
     print("\nEntrenando modelo final con todos los datos...")
     rf_pipeline.fit(X, y)
-    print("Modelo entrenado. (Opcional: aquí podrías hacer joblib.dump(...) )")
+    print("Modelo entrenado.")
+
+    # Guardar el pipeline completo (imputer + scaler + RF)
+    model_path = os.path.join(MODELS_DIR, "comportamiento_rf_pipeline.joblib")
+    joblib.dump(rf_pipeline, model_path)
+    print(f"Pipeline de Random Forest guardado en: {model_path}")
 
 
 if __name__ == "__main__":
