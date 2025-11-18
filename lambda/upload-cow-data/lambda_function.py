@@ -20,6 +20,9 @@ s3 = boto3.client('s3')
 BUCKET_NAME = os.environ.get('BUCKET_NAME')
 FOLDER = 'raw/'
 
+# Cliente lambda
+lambda_client = boto3.client('lambda')
+MERGE_LAMBDA_NAME = os.environ.get('MERGE_LAMBDA_NAME', 'dataProcessing')
 
 def lambda_handler(event, context):
     """
@@ -109,6 +112,22 @@ def lambda_handler(event, context):
                 's3_key': s3_key,
                 'size_bytes': len(file_content)
             })
+        
+        logger.info("All files uploaded. invoking data processing function")
+
+        process_payload = {
+            'bucket': BUCKET_NAME,
+            'trigger': 'manual',
+            'files_uploaded': len(uploaded_files),
+            'upload_request_id': context.aws_request_id
+        }
+
+        response = lambda_client.invoke(
+            FunctionName=MERGE_LAMBDA_NAME,
+            InvocationType='Event',  # Asíncrono - no bloquea
+            Payload=json.dumps(process_payload)
+        )
+        logger.info(f"Merge Lambda invoked with status: {response['StatusCode']}")
 
         # Retornar respuesta exitosa con información de todos los archivos
         return {
