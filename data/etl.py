@@ -1,4 +1,6 @@
 # etl_sesiones.py
+# Uso desde consola:
+# python3 data/etl.py
 
 import unicodedata
 import re

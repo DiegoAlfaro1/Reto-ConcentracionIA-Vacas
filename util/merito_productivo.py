@@ -1,4 +1,6 @@
 # merito_productivo.py
+# Uso desde consola:
+# python3 util/merito_productivo.py
 
 import os
 import unicodedata

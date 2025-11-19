@@ -7,7 +7,7 @@
 # - Mérito productivo precalculado
 #
 # Uso desde consola:
-#   python integration_v1.py --csv data/prediccion/6178.csv --cow-id 6178
+#   python3 integration_v1.py --csv data/prediccion/6178.csv --cow-id 6178
 #
 
 import os

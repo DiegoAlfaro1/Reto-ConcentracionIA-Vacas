@@ -1,4 +1,6 @@
-# comportamiento_v1.py
+# comportamiento_rf_v2.py
+# Uso desde consola:
+# python3 models/comportamiento_rf_v2.py
 # Random Forest
 
 import os

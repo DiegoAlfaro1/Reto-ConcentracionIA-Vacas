@@ -1,4 +1,6 @@
-# iso_sanidad.py
+# sanidad_iso_v2.py
+# Uso desde consola:
+# python3 models/sanidad_iso_v2.py
 
 import os
 import numpy as np
