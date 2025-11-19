@@ -1,17 +1,49 @@
+import json
 import os
-from policies import generate_policy
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 VALID_TOKEN = os.environ.get('AUTH_TOKEN')
 
 def lambda_handler(event, context):
-    token = event.get("authorizationToken")
-
-    if token == VALID_TOKEN:
-        return generate_policy('user', "Allow", event["methodArn"])
-    else:
-        return generate_policy('user', "Deny", event["methodArn"])
+    try:
+        logger.info("Event incoming, trying to authorize request")
+        logger.info(f"Full event: {json.dumps(event)}")
         
-    return {
-        'statusCode': 200,
-        'body': json.dumps('Hello from Lambda!')
-    }
+        # HTTP APIs lowercase all headers
+        headers = event.get("headers", {})
+        token = headers.get("authorization") or headers.get("Authorization")
+        
+        logger.info(f"Token received: {token}")
+        logger.info(f"Expected token: {VALID_TOKEN}")
+        
+        # Strip "Bearer " prefix if present
+        if token:
+            if token.startswith("Bearer "):
+                token = token[7:]  # Remove "Bearer "
+            elif token.startswith("bearer "):
+                token = token[7:]  # Remove "bearer "
+        
+        logger.info(f"Token after strip: {token}")
+        
+        if token and token == VALID_TOKEN:
+            logger.info("Authorization successful")
+            return {
+                "isAuthorized": True,
+                "context": {
+                    "user": "authorized"
+                }
+            }
+        
+        logger.info("Authorization failed")
+        return {
+            "isAuthorized": False
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in authorizer: {e}")
+        return {
+            "isAuthorized": False
+        }
