@@ -19,9 +19,9 @@ Luis Adrián Uribe Cruz - A01783129
 
 ## Indice de links
 
-- [`Business Understanding`](https://docs.google.com/document/d/1ARz_uvq6XoDpw--jkj5Ycz5t_F1_23TjBtyNBFguUvo/edit?usp=drive_link)
-- [`Data Understanding`](https://docs.google.com/document/d/1gg4wXKL5Xer1dtNStgGxF8hR__HBRHhscCtg1XF-bZ4/edit?usp=drive_link)
-- [`Data Preparation`](https://docs.google.com/document/d/1MMzRR5AxOEOnzVbFJ6VK1FZxMVcmvz54ozA-U6968l8/edit?usp=drive_link)
+- [`Business Understanding`](https://drive.google.com/file/d/1rxwwYwfayaso4IpioGf6kz7d6XdXnCwL/view?usp=sharing)
+- [`Data Understanding`](https://drive.google.com/file/d/1AL_moM5ecOqJzkVe77QCIIs5Qfjlnygq/view?usp=sharing)
+- [`Data Preparation`](https://drive.google.com/file/d/1R_rL1L_LCuKz1OiMFl_CWI08_t3xnTfB/view?usp=sharing)
 - [`Modelado`](https://docs.google.com/document/d/1ij_Z6rscloFkTmMU2RQvtyWRKz3KUUbD3AR-JPQDoO0/edit?usp=drive_link)
 - [`Plan de valor ganado`](https://docs.google.com/spreadsheets/d/12ubunIKMkxzAnnMMdO_UpgfDZ-DNtL5uD4X8DdFFTCw/edit?usp=drive_link)
 
