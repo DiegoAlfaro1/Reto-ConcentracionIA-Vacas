@@ -19,11 +19,12 @@ Luis Adrián Uribe Cruz - A01783129
 
 ## Indice de links
 
-- [`Business Understanding`](https://drive.google.com/file/d/1rxwwYwfayaso4IpioGf6kz7d6XdXnCwL/view?usp=sharing)
-- [`Data Understanding`](https://drive.google.com/file/d/1AL_moM5ecOqJzkVe77QCIIs5Qfjlnygq/view?usp=sharing)
-- [`Data Preparation`](https://drive.google.com/file/d/1R_rL1L_LCuKz1OiMFl_CWI08_t3xnTfB/view?usp=sharing)
+- [`Business Understanding`](https://github.com/DiegoAlfaro1/Reto-ConcentracionIA-Vacas/blob/main/Documentaci%C3%B3n%20CRISP-DM/Business%20Understanding.pdf)
+- [`Data Understanding`](https://github.com/DiegoAlfaro1/Reto-ConcentracionIA-Vacas/blob/main/Documentaci%C3%B3n%20CRISP-DM/Data%20Preparation.pdf)
+- [`Data Preparation`](https://github.com/DiegoAlfaro1/Reto-ConcentracionIA-Vacas/blob/main/Documentaci%C3%B3n%20CRISP-DM/Data%20Understanding.pdf)
 - [`Modelado`](https://docs.google.com/document/d/1ij_Z6rscloFkTmMU2RQvtyWRKz3KUUbD3AR-JPQDoO0/edit?usp=drive_link)
 - [`Plan de valor ganado`](https://docs.google.com/spreadsheets/d/12ubunIKMkxzAnnMMdO_UpgfDZ-DNtL5uD4X8DdFFTCw/edit?usp=drive_link)
+- [`Politica de Datos y Acceso`](https://github.com/DiegoAlfaro1/Reto-ConcentracionIA-Vacas/blob/main/Documentaci%C3%B3n%20CRISP-DM/Politica%20de%20Datos%20y%20Acceso.pdf)
 
 [Link](https://drive.google.com/drive/u/1/folders/1E_7hHlKTfgszawLt3X5qVyLl47rKrEi5) a la carpeta completa de drive
 
