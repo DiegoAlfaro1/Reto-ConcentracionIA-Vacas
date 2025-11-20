@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { UploadSection } from "./components/UploadSection";
 import "./styles.css";
 
 const heroStats = [
@@ -196,6 +197,8 @@ function App() {
       </header>
 
       <main>
+        <UploadSection />
+
         <section className="filters">
           <div className="filters__bar">
             <p className="filters__label">Filtrar ranking por:</p>
@@ -280,6 +283,7 @@ function App() {
             </article>
           ))}
         </section>
+
       </main>
 
       <footer>
