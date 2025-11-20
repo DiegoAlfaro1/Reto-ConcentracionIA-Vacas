@@ -90,4 +90,34 @@ pip install [nombre dependencia]
 pip freeze > requirements.txt
 </code>
 
+## Quiero ejecutrar desde consola ETL
+
+### ETl para modelos de comportamiento y sanidad
+<code>
+python3 data/etl.py
+</code>
+
+## Quiero entrenar desde consola modelos e merito de productividad
+
+### Modelo comportamiento V2
+<code>
+python3 models/comportamiento_rf_v2.py
+</code>
+
+### Modelo de sanidad V2
+<code>
+python3 models/sanidad_iso_v2.py
+</code>
+
+### Merito de productvidad
+<code>
+python3 util/merito_productivo.py
+</code>
+
+## Quiero ejecutrar la integreacion desde consola
+
+<code>
+python3 integration_v1.py --csv [path csv ]--cow-id [id]
+</code>
+
 ## Conexion con S3

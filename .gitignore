@@ -7,6 +7,9 @@ figuras_por_vaca/
 *.docx
 *.pptx
 
+data/*
+!data/*.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
