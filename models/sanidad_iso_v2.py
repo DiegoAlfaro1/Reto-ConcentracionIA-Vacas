@@ -1,6 +1,7 @@
 # sanidad_iso_v2.py
 # Uso desde consola:
-# python3 models/sanidad_iso_v2.py
+#   python3 models/sanidad_iso_v2.py
+#
 
 import os
 import numpy as np
@@ -15,9 +16,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import KFold
 
 
-CSV_HEALTH = "../data/sessions_health.csv"
-RESULTS_DIR = "../results"
-MODELS_DIR = "../models"
+CSV_HEALTH = "data/sessions_health.csv"
+RESULTS_DIR = "results/"
+MODELS_DIR = "models/trained_models/"
 
 
 def main():
