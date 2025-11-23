@@ -7,6 +7,8 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
+import shap
 import joblib 
 
 from sklearn.ensemble import IsolationForest
@@ -14,11 +16,33 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import KFold
+from sklearn.decomposition import PCA
 
 
-CSV_HEALTH = "data/sessions_health.csv"
+# Configurar estilo de gráficos
+plt.style.use('ggplot')
+
+CSV_HEALTH = "datos/sessions_health.csv"
 RESULTS_DIR = "results/"
 MODELS_DIR = "models/trained_models/"
+
+
+def plot_pca_clusters(X_transformed, labels, output_dir):
+    """Métrica Extra: Visualiza la separación en espacio 2D."""
+    print("Generando Visualización PCA...")
+    # Reducir dimensionalidad a 2 componentes principales
+    pca = PCA(n_components=2)
+    X_pca = pca.fit_transform(X_transformed)
+    
+    plt.figure(figsize=(10, 6))
+    label_text = np.where(labels == 1, 'Normal', 'Anomalía')
+    sns.scatterplot(x=X_pca[:,0], y=X_pca[:,1], hue=label_text, palette={'Normal': 'gray', 'Anomalía': 'red'}, alpha=0.6)
+    plt.title(f"Proyección PCA (Modelo Final)")
+    
+    out_path = os.path.join(output_dir, "iso_2.0_pca_clusters.png")
+    plt.savefig(out_path, dpi=300)
+    plt.close()
+    print(f"Gráfica PCA guardada en: {out_path}")
 
 
 def main():
@@ -51,10 +75,10 @@ def main():
     # ------------------------
     # "K-Fold" no supervisado
     # ------------------------
-    kf = KFold(n_splits=3, shuffle=True, random_state=42)
+    kf = KFold(n_splits=6, shuffle=True, random_state=42)
     anomaly_rates = []
 
-    print("\nEjecutando 3-fold 'CV' para ver estabilidad de anomalías...")
+    print("\nEjecutando 6-fold 'CV' para ver estabilidad de anomalías...")
     for fold, (train_idx, test_idx) in enumerate(kf.split(X), start=1):
         X_train = X.iloc[train_idx]
         X_test = X.iloc[test_idx]
@@ -80,21 +104,23 @@ def main():
     )
 
     # ---------------------------------------------------
-    # Gráfica 1: porcentaje de anomalías por fold (barra)
+    # Gráfica 1: porcentaje de anomalías por fold (barra) - ESTILO v2.1
     # ---------------------------------------------------
-    folds = np.arange(1, 4)
+    folds = np.arange(1, 7)
+    fold_metrics = [rate * 100 for rate in anomaly_rates]  # Convertir a porcentaje
 
-    fig, ax = plt.subplots()
-    ax.bar(folds, anomaly_rates)
-    ax.set_xticks(folds)
-    ax.set_xlabel("Fold")
-    ax.set_ylabel("Porcentaje de sesiones anómalas")
-    ax.set_title("Isolation Forest - porcentaje de anomalías por fold")
-
-    fig.tight_layout()
-    out_path = os.path.join(RESULTS_DIR, "iso_anomaly_rates_per_fold.png")
-    fig.savefig(out_path, dpi=300)
-    plt.close(fig)
+    plt.figure(figsize=(8, 5))
+    bars = plt.bar(folds, fold_metrics, color='steelblue', alpha=0.8)
+    plt.axhline(mean_rate * 100, color='red', linestyle='--', label=f'Media ({mean_rate*100:.2f}%)')
+    plt.title(f"Tasa de Anomalías por Pliegue (Verificación de Estabilidad)")
+    plt.xlabel("Número de Pliegue")
+    plt.ylabel("Porcentaje de Anomalías Detectadas")
+    plt.legend()
+    plt.ylim(0, max(fold_metrics) * 1.25)
+    
+    out_path = os.path.join(RESULTS_DIR, "iso_2.0_stability_folds.png")
+    plt.savefig(out_path, dpi=300)
+    plt.close()
     print(f"Gráfica de porcentaje de anomalías guardada en: {out_path}")
 
     # ------------------------
@@ -126,19 +152,46 @@ def main():
     )
 
     # ---------------------------------------------------
-    # Gráfica 2: histograma de anomaly_score
+    # Gráfica 2: histograma de anomaly_score - ESTILO v2.1
     # ---------------------------------------------------
-    fig, ax = plt.subplots()
-    ax.hist(anomaly_scores, bins=30)
-    ax.set_xlabel("health_anomaly_score (mayor = más raro)")
-    ax.set_ylabel("Frecuencia")
-    ax.set_title("Distribución de anomaly_score del Isolation Forest")
-
-    fig.tight_layout()
-    out_path = os.path.join(RESULTS_DIR, "iso_anomaly_score_hist.png")
-    fig.savefig(out_path, dpi=300)
-    plt.close(fig)
+    print("Generando Histograma de Puntuaciones de Anomalías...")
+    plt.figure(figsize=(10, 6))
+    sns.histplot(anomaly_scores, bins=50, kde=True, color='purple')
+    plt.title("Distribución de Puntuaciones de Anomalías (Modelo Final)")
+    plt.xlabel("Puntuación de Anomalía (Mayor = Más Raro)")
+    plt.ylabel("Frecuencia")
+    
+    # Agregar una línea para el umbral aproximado
+    contamination = 0.05
+    threshold = np.percentile(anomaly_scores, 100 * (1 - contamination))
+    plt.axvline(threshold, color='red', linestyle='--', label=f'Umbral Top {contamination*100}%')
+    plt.legend()
+    
+    out_path = os.path.join(RESULTS_DIR, "iso_2.0_score_histogram.png")
+    plt.savefig(out_path, dpi=300)
+    plt.close()
     print(f"Histograma de anomaly_score guardado en: {out_path}")
+
+    # ---------------------------------------------------
+    # Métrica Extra: Visualización PCA
+    # ---------------------------------------------------
+    plot_pca_clusters(X_scaled, anomaly_labels, RESULTS_DIR)
+    
+    # ---------------------------------------------------
+    # Métrica Extra: SHAP para explicabilidad
+    # ---------------------------------------------------
+    try:
+        print("Generando gráfica SHAP...")
+        explainer = shap.TreeExplainer(iso_model)
+        shap_values = explainer.shap_values(X_scaled)
+        plt.figure()
+        shap.summary_plot(shap_values, X_scaled, show=False)
+        shap_path = os.path.join(RESULTS_DIR, "iso_2.0_shap.png")
+        plt.savefig(shap_path, bbox_inches='tight')
+        plt.close()
+        print(f"Gráfica SHAP guardada en: {shap_path}")
+    except Exception as e:
+        print(f"No se pudo generar gráfica SHAP: {e}")
 
     # Guardar el pipeline completo (imputer + scaler + IsolationForest)
     model_path = os.path.join(MODELS_DIR, "iso_sanidad_pipeline.joblib")

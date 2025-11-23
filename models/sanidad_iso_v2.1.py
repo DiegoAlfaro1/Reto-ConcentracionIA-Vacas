@@ -3,13 +3,17 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
+
+# Fix para evitar errores de threading con matplotlib en Windows
+import matplotlib
+matplotlib.use('Agg')  # Backend no interactivo
 import matplotlib.pyplot as plt
 import seaborn as sns
 import shap
 
 from sklearn.ensemble import IsolationForest
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import RobustScaler, OneHotEncoder
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.decomposition import PCA
@@ -47,7 +51,7 @@ def preprocess_data(df):
     # RobustScaler es mejor para detección de anomalías que StandardScaler
     numeric_transformer = Pipeline(steps=[
         ('imputer', SimpleImputer(strategy='median')),  # Imputar valores faltantes con la mediana
-        ('scaler', RobustScaler())  # Escalar usando estadísticas robustas
+        ('scaler', StandardScaler())  # Escalar usando estadísticas robustas
     ])
 
     categorical_transformer = Pipeline(steps=[
@@ -123,7 +127,7 @@ def evaluate_stability(df, preprocessor, args):
     plt.legend()
     plt.ylim(0, max(fold_metrics) * 1.25) 
     
-    out_path = os.path.join(args.results_dir, "iso_artifact_1_stability_folds.png")
+    out_path = os.path.join(args.results_dir, "iso_2.1_stability_folds.png")
     plt.savefig(out_path, dpi=300)
     plt.close()
     print(f"Artefacto #1 (Gráfico de Estabilidad) guardado en {out_path}")
@@ -142,7 +146,7 @@ def plot_pca_clusters(X_transformed, labels, output_dir):
     sns.scatterplot(x=X_pca[:,0], y=X_pca[:,1], hue=label_text, palette={'Normal': 'gray', 'Anomalía': 'red'}, alpha=0.6)
     plt.title(f"Proyección PCA (Modelo Final)")
     
-    out_path = os.path.join(output_dir, "iso_extra_pca_clusters.png")
+    out_path = os.path.join(output_dir, "iso_2.1_pca_clusters.png")
     plt.savefig(out_path, dpi=300)
     plt.close()
 
@@ -202,7 +206,7 @@ def main():
     plt.axvline(threshold, color='red', linestyle='--', label=f'Umbral Top {args.contamination*100}%')
     plt.legend()
     
-    hist_path = os.path.join(args.results_dir, "iso_artifact_2_score_histogram.png")
+    hist_path = os.path.join(args.results_dir, "iso_2.1_score_histogram.png")
     plt.savefig(hist_path, dpi=300)
     plt.close()
     print(f"Artefacto #2 (Histograma) guardado en {hist_path}")
@@ -211,15 +215,21 @@ def main():
     plot_pca_clusters(X_transformed, anomaly_labels, args.results_dir)
     
     # Opcional: SHAP para explicabilidad
+    print("Generando gráfica SHAP...")
     try:
         explainer = shap.TreeExplainer(model)
         shap_values = explainer.shap_values(X_transformed)
-        plt.figure()
+        
+        # Crear figura sin mostrarla
+        fig = plt.figure(figsize=(10, 6))
         shap.summary_plot(shap_values, X_transformed, show=False)
-        plt.savefig(os.path.join(args.results_dir, "iso_extra_shap.png"), bbox_inches='tight')
-        plt.close()
-    except:
-        pass
+        
+        shap_path = os.path.join(args.results_dir, "iso_2.1_shap.png")
+        plt.savefig(shap_path, bbox_inches='tight', dpi=300)
+        plt.close(fig)
+        print(f"Gráfica SHAP guardada en: {shap_path}")
+    except Exception as e:
+        print(f"No se pudo generar gráfica SHAP: {e}")
 
     # 6. Guardar Resultados
     df_results = df_raw.copy()
@@ -227,7 +237,8 @@ def main():
     df_results['is_anomaly'] = anomaly_labels 
     
     # Guardar Modelo entrenado
-    model_path = os.path.join(args.models_dir, "iso_sanidad_pipeline.joblib")
+    model_path = os.path.join(args.models_dir, "trained_models/iso_sanidad_pipeline.joblib")
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
     joblib.dump(pipeline, model_path)
     print(f"\nProceso Completo. Modelo guardado en: {model_path}")
 
