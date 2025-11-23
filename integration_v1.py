@@ -26,8 +26,8 @@ from data.etl_vaca_single import build_merged_from_single  # asegúrate de que d
 # 0) Rutas de modelos y datos
 # ==========================
 
-BEHAVIOR_MODEL_PATH = "models/comportamiento_rf_pipeline.joblib"
-HEALTH_MODEL_PATH   = "models/iso_sanidad_pipeline.joblib"
+BEHAVIOR_MODEL_PATH = "models/trained_models/comportamiento_rf_pipeline.joblib"
+HEALTH_MODEL_PATH   = "models/trained_models/iso_sanidad_pipeline.joblib"
 MERITO_CSV_PATH     = "data/merito_productivo/merito_productivo_vacas.csv"
 
 
