@@ -23,8 +23,8 @@ from sklearn.decomposition import PCA
 plt.style.use('ggplot')
 
 CSV_HEALTH = "datos/sessions_health.csv"
-RESULTS_DIR = "results/"
-MODELS_DIR = "models/trained_models/isolationForest/"
+RESULTS_DIR = "results/isolationForest/"
+MODELS_DIR = "trained_models/isolationForest/"
 
 
 def plot_pca_clusters(X_transformed, labels, output_dir):

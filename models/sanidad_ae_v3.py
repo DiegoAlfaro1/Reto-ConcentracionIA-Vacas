@@ -29,7 +29,7 @@ plt.style.use('ggplot')
 
 CSV_HEALTH = "datos/sessions_health.csv"
 RESULTS_DIR = "results/autoencoder/"
-MODELS_DIR = "models/trained_models/"
+MODELS_DIR = "trained_models/autoencoder/"
 
 
 # ============================================
@@ -147,7 +147,7 @@ def plot_pca_clusters(X_scaled, labels, output_dir):
                     palette={'Normal': 'gray', 'Anomalía': 'red'}, alpha=0.6)
     plt.title(f"Proyección PCA (Modelo Final)")
     
-    out_path = os.path.join(output_dir, "ae_pca_clusters.png")
+    out_path = os.path.join(output_dir, "ae_3.0_pca_clusters.png")
     plt.savefig(out_path, dpi=300)
     plt.close()
     print(f"Gráfica PCA guardada en: {out_path}")
@@ -186,7 +186,7 @@ def plot_feature_reconstruction_errors(model, X, feature_names, output_dir, top_
     plt.title(f'Top {top_n} Features con Mayor Error de Reconstrucción')
     plt.gca().invert_yaxis()
     
-    out_path = os.path.join(output_dir, "ae_feature_errors.png")
+    out_path = os.path.join(output_dir, "ae_3.0_feature_errors.png")
     plt.savefig(out_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"Gráfica de errores por feature guardada en: {out_path}")
@@ -270,7 +270,7 @@ def main():
     plt.legend()
     plt.ylim(0, max(fold_metrics) * 1.25)
     
-    out_path = os.path.join(RESULTS_DIR, "ae_anomaly_rates_per_fold.png")
+    out_path = os.path.join(RESULTS_DIR, "ae_3.0_anomaly_rates_per_fold.png")
     plt.savefig(out_path, dpi=300)
     plt.close()
     print(f"\nGráfica de porcentaje de anomalías guardada en: {out_path}")
@@ -322,7 +322,7 @@ def main():
                 label=f'Umbral Top {contamination*100}%')
     plt.legend()
     
-    out_path = os.path.join(RESULTS_DIR, "ae_anomaly_score_hist.png")
+    out_path = os.path.join(RESULTS_DIR, "ae_3.0_anomaly_score_hist.png")
     plt.savefig(out_path, dpi=300)
     plt.close()
     print(f"Histograma de anomaly_score guardado en: {out_path}")
@@ -348,7 +348,7 @@ def main():
         'contamination': 0.05
     }
     
-    model_path = os.path.join(MODELS_DIR, "ae_sanidad_model.joblib")
+    model_path = os.path.join(MODELS_DIR, "ae_sanidad_v3.0_model.joblib")
     joblib.dump(model_save_dict, model_path)
     print(f"\nModelo Autoencoder guardado en: {model_path}")
 
