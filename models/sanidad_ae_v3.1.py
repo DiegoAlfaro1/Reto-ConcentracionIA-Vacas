@@ -39,7 +39,7 @@ MODELS_DIR = "trained_models/autoencoder/"
 def parse_args():
     """Configuracion de argumentos CLI"""
     parser = argparse.ArgumentParser(description="Autoencoder para deteccion de anomalias en salud del ganado")
-    parser.add_argument("--contamination", type=float, default=None, 
+    parser.add_argument("--contamination", type=float, default=0.05, 
                         help="Proporcion esperada de anomalias (None = auto-optimizar)")
     parser.add_argument("--k_folds", type=int, default=3, 
                         help="Numero de pliegues para validacion cruzada")
