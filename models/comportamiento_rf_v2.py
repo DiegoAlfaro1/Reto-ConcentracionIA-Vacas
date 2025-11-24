@@ -17,8 +17,8 @@ from sklearn.model_selection import StratifiedKFold, cross_validate, cross_val_p
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 CSV_BEHAVIOR = "data/sessions_behavior.csv"
-RESULTS_DIR = "results/"
-MODELS_DIR = "models/trained_models/"
+RESULTS_DIR = "results/randomForest/"
+MODELS_DIR = "trained_models/randomForest/"
 
 
 def main():
@@ -111,7 +111,7 @@ def main():
     table_data["std"] = stds
 
     df_metrics = pd.DataFrame(table_data)
-    metrics_csv_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_table.csv")
+    metrics_csv_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_table_v2.csv")
     df_metrics.to_csv(metrics_csv_path, index=False)
     print("\nTabla de métricas por fold guardada en:")
     print(metrics_csv_path)
@@ -130,7 +130,7 @@ def main():
     ax.set_title("Random Forest - 3-fold CV (métrica promedio ± std)")
 
     fig.tight_layout()
-    out_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_bar.png")
+    out_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_bar_v2.png")
     fig.savefig(out_path, dpi=300)
     plt.close(fig)
     print(f"Gráfica de métricas promedio guardada en: {out_path}")
@@ -152,7 +152,7 @@ def main():
     ax.legend()
     fig.tight_layout()
 
-    out_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_per_fold.png")
+    out_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_per_fold_v2.png")
     fig.savefig(out_path, dpi=300)
     plt.close(fig)
     print(f"Gráfica de métricas por fold guardada en: {out_path}")
@@ -185,7 +185,7 @@ def main():
     print("Modelo entrenado.")
 
     # Guardar el pipeline completo (imputer + scaler + RF)
-    model_path = os.path.join(MODELS_DIR, "comportamiento_rf_pipeline.joblib")
+    model_path = os.path.join(MODELS_DIR, "comportamiento_rf_pipeline_v2.joblib")
     joblib.dump(rf_pipeline, model_path)
     print(f"Pipeline de Random Forest guardado en: {model_path}")
 
