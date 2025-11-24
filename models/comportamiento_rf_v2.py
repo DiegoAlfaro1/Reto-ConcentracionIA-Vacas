@@ -17,8 +17,8 @@ from sklearn.model_selection import StratifiedKFold, cross_validate, cross_val_p
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 CSV_BEHAVIOR = "data/sessions_behavior.csv"
-RESULTS_DIR = "results/"
-MODELS_DIR = "models/trained_models/"
+RESULTS_DIR = "results/randomForest/"
+MODELS_DIR = "trained_models/randomForest/"
 
 
 def main():
@@ -111,7 +111,7 @@ def main():
     table_data["std"] = stds
 
     df_metrics = pd.DataFrame(table_data)
-    metrics_csv_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_table.csv")
+    metrics_csv_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_table_v2.csv")
     df_metrics.to_csv(metrics_csv_path, index=False)
     print("\nTabla de métricas por fold guardada en:")
     print(metrics_csv_path)
