@@ -26,7 +26,7 @@ def parse_args():
     """Configuración de argumentos de línea de comandos para el script"""
     parser = argparse.ArgumentParser(description="Isolation Forest: Verificación de Estabilidad + Modelo Final de Producción")
     parser.add_argument("--input", type=str, default="datos/sessions_health.csv", help="Ruta al archivo CSV de entrada")
-    parser.add_argument("--results_dir", type=str, default="results", help="Directorio para imágenes de salida")
+    parser.add_argument("--results_dir", type=str, default="results/isolation_forest", help="Directorio para imágenes de salida")
     parser.add_argument("--models_dir", type=str, default="models", help="Directorio para guardar modelos")
     parser.add_argument("--contamination", type=float, default=0.05, help="Proporción esperada de valores atípicos")
     parser.add_argument("--n_estimators", type=int, default=200, help="Número de árboles")

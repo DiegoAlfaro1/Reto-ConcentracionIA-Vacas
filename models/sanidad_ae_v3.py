@@ -28,7 +28,7 @@ matplotlib.use('Agg')
 plt.style.use('ggplot')
 
 CSV_HEALTH = "datos/sessions_health.csv"
-RESULTS_DIR = "results/"
+RESULTS_DIR = "results/autoencoder/"
 MODELS_DIR = "models/trained_models/"
 
 
