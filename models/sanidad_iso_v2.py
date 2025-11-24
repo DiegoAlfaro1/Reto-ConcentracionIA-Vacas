@@ -22,7 +22,7 @@ from sklearn.decomposition import PCA
 # Configurar estilo de gráficos
 plt.style.use('ggplot')
 
-CSV_HEALTH = "data/sessions_health.csv"
+CSV_HEALTH = "datos/sessions_health.csv"
 RESULTS_DIR = "results/isolationForest/"
 MODELS_DIR = "trained_models/isolationForest/"
 
