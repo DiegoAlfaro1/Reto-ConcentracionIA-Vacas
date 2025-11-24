@@ -13,12 +13,12 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import StratifiedKFold, cross_validate
+from sklearn.model_selection import StratifiedKFold, cross_validate, cross_val_predict
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
-
-CSV_BEHAVIOR = "../data/sessions_behavior.csv"
-RESULTS_DIR = "../results"
-MODELS_DIR = "../models"
+CSV_BEHAVIOR = "data/sessions_behavior.csv"
+RESULTS_DIR = "results/"
+MODELS_DIR = "models/trained_models/"
 
 
 def main():
@@ -96,6 +96,28 @@ def main():
         )
 
     # ---------------------------------------------------
+    # Tabla de métricas (por métrica y por fold)
+    # ---------------------------------------------------
+    n_folds = len(per_fold_dict[metric_names[0]])
+    table_data = {"metric": metric_names}
+
+    for fold_idx in range(n_folds):
+        col_name = f"fold_{fold_idx + 1}"
+        table_data[col_name] = [
+            per_fold_dict[m][fold_idx] for m in metric_names
+        ]
+
+    table_data["mean"] = means
+    table_data["std"] = stds
+
+    df_metrics = pd.DataFrame(table_data)
+    metrics_csv_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_table.csv")
+    df_metrics.to_csv(metrics_csv_path, index=False)
+    print("\nTabla de métricas por fold guardada en:")
+    print(metrics_csv_path)
+    print(df_metrics, "\n")
+
+    # ---------------------------------------------------
     # Gráfica 1: barra con media y desviación estándar
     # ---------------------------------------------------
     x = np.arange(len(metric_names))
@@ -111,12 +133,12 @@ def main():
     out_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_bar_v2.png")
     fig.savefig(out_path, dpi=300)
     plt.close(fig)
-    print(f"\nGráfica de métricas promedio guardada en: {out_path}")
+    print(f"Gráfica de métricas promedio guardada en: {out_path}")
 
     # ---------------------------------------------------
     # Gráfica 2: métricas por fold (líneas)
     # ---------------------------------------------------
-    folds = np.arange(1, 4)
+    folds = np.arange(1, n_folds + 1)
 
     fig, ax = plt.subplots()
     for metric in metric_names:
@@ -134,6 +156,26 @@ def main():
     fig.savefig(out_path, dpi=300)
     plt.close(fig)
     print(f"Gráfica de métricas por fold guardada en: {out_path}")
+
+    # ---------------------------------------------------
+    # Matriz de confusión usando predicciones de CV
+    # ---------------------------------------------------
+    print("\nCalculando matriz de confusión con cross_val_predict...")
+    y_pred_cv = cross_val_predict(
+        rf_pipeline, X, y, cv=cv, n_jobs=-1
+    )
+
+    cm = confusion_matrix(y, y_pred_cv)
+    fig, ax = plt.subplots()
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+    disp.plot(ax=ax, colorbar=False)
+    ax.set_title("Matriz de confusión - Random Forest (3-fold CV)")
+    fig.tight_layout()
+
+    out_path = os.path.join(RESULTS_DIR, "rf_cv_confusion_matrix.png")
+    fig.savefig(out_path, dpi=300)
+    plt.close(fig)
+    print(f"Matriz de confusión guardada en: {out_path}")
 
     # ---------------------------------------------------
     # Entrenar modelo final con todos los datos
