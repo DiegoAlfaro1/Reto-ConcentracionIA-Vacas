@@ -23,8 +23,8 @@ from sklearn.decomposition import PCA
 plt.style.use('ggplot')
 
 CSV_HEALTH = "datos/sessions_health.csv"
-RESULTS_DIR = "results/isolation_forest/"
-MODELS_DIR = "models/trained_models/"
+RESULTS_DIR = "results/"
+MODELS_DIR = "models/trained_models/isolationForest/"
 
 
 def plot_pca_clusters(X_transformed, labels, output_dir):
@@ -194,7 +194,7 @@ def main():
         print(f"No se pudo generar gráfica SHAP: {e}")
 
     # Guardar el pipeline completo (imputer + scaler + IsolationForest)
-    model_path = os.path.join(MODELS_DIR, "iso_sanidad_pipeline.joblib")
+    model_path = os.path.join(MODELS_DIR, "iso_sanidad_pipeline_v2.joblib")
     joblib.dump(iso_pipeline, model_path)
     print(f"Pipeline de Isolation Forest guardado en: {model_path}")
 
