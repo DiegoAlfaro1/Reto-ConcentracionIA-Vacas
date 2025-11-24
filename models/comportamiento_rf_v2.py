@@ -108,7 +108,7 @@ def main():
     ax.set_title("Random Forest - 3-fold CV (métrica promedio ± std)")
 
     fig.tight_layout()
-    out_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_bar.png")
+    out_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_bar_v2.png")
     fig.savefig(out_path, dpi=300)
     plt.close(fig)
     print(f"\nGráfica de métricas promedio guardada en: {out_path}")
@@ -130,7 +130,7 @@ def main():
     ax.legend()
     fig.tight_layout()
 
-    out_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_per_fold.png")
+    out_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_per_fold_v2.png")
     fig.savefig(out_path, dpi=300)
     plt.close(fig)
     print(f"Gráfica de métricas por fold guardada en: {out_path}")
@@ -143,7 +143,7 @@ def main():
     print("Modelo entrenado.")
 
     # Guardar el pipeline completo (imputer + scaler + RF)
-    model_path = os.path.join(MODELS_DIR, "comportamiento_rf_pipeline.joblib")
+    model_path = os.path.join(MODELS_DIR, "comportamiento_rf_pipeline_v2.joblib")
     joblib.dump(rf_pipeline, model_path)
     print(f"Pipeline de Random Forest guardado en: {model_path}")
 
