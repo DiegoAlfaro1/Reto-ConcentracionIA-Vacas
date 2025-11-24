@@ -9,9 +9,9 @@ import numpy as np
 import pandas as pd
 
 
-CSV_INPUT = "registros_sesiones_merged.csv"
+CSV_INPUT = "datos/registros_sesiones_merged.csv"
 CSV_BEHAVIOR = "sessions_behavior.csv"
-CSV_HEALTH = "sessions_health.csv"
+CSV_HEALTH = "datos/sessions_health.csv"
 
 
 def normalize_column(name: str) -> str:
