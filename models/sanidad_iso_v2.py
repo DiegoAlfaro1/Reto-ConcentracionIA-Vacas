@@ -23,7 +23,7 @@ from sklearn.decomposition import PCA
 plt.style.use('ggplot')
 
 CSV_HEALTH = "datos/sessions_health.csv"
-RESULTS_DIR = "results/"
+RESULTS_DIR = "results/isolation_forest/"
 MODELS_DIR = "models/trained_models/"
 
 
