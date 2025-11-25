@@ -13,7 +13,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import StratifiedKFold, GridSearchCV, cross_validate
+from sklearn.model_selection import StratifiedKFold, GridSearchCV, cross_validate, cross_val_predict
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 CSV_BEHAVIOR = "data/sessions_behavior.csv"
 RESULTS_DIR = "results/randomForest/"
@@ -41,7 +42,6 @@ def main():
     print(y.value_counts(), "\n")
 
     # Pipeline base: imputar -> escalar -> Random Forest
-    # Nota: Los parámetros del RF se definirán en el grid
     rf_pipeline = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="median")),
@@ -62,7 +62,7 @@ def main():
     # K-Fold (3 folds estratificado)
     cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
 
-    scoring = "f1" # Optimizamos por F1-score, pero GridSearchCV calcula el score principal
+    scoring = "f1"  # Optimizamos por F1-score
 
     print("Iniciando GridSearchCV...")
     print(f"Grid: {param_grid}")
@@ -196,6 +196,31 @@ def main():
     fig.savefig(out_path, dpi=300)
     plt.close(fig)
     print(f"Gráfica de métricas por fold guardada en: {out_path}")
+
+    # ---------------------------------------------------
+    # Matriz de confusión usando predicciones de CV
+    # ---------------------------------------------------
+    print("\nCalculando matriz de confusión con cross_val_predict (modelo optimizado)...")
+    y_pred_cv = cross_val_predict(
+        best_model,
+        X,
+        y,
+        cv=cv,
+        n_jobs=-1,
+    )
+
+    cm = confusion_matrix(y, y_pred_cv)
+    fig, ax = plt.subplots()
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+    disp.plot(ax=ax, colorbar=False)
+    ax.set_title("Matriz de confusión - Random Forest Optimizado (3-fold CV)")
+    fig.tight_layout()
+
+    cm_path = os.path.join(RESULTS_DIR, "rf_cv_confusion_matrix_v2.1.png")
+    fig.savefig(cm_path, dpi=300)
+    plt.close(fig)
+    print(f"Matriz de confusión guardada en: {cm_path}")
+
 
 if __name__ == "__main__":
     main()
