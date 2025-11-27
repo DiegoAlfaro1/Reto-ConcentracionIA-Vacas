@@ -1,18 +1,27 @@
 # merito_productivo.py
-# Uso desde consola:
-# python3 util/merito_productivo.py
+# Uso desde consola (desde la raíz del repo):
+#   python3 util/merito_productivo.py
 
 import os
+import sys
 import unicodedata
 import re
 
 import numpy as np
 import pandas as pd
 
-# Rutas de entrada/salida (ajusta si tu estructura es distinta)
-CSV_INPUT = "../data/registros_sesiones_merged.csv"
-CSV_SESIONES_OUT = "../data/merito_productivo/sessions_with_prod_ajustada.csv"
-CSV_VACAS_OUT = "../data/merito_productivo/merito_productivo_vacas.csv"
+# --- asegurar raíz del proyecto en sys.path ---
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+# helpers de almacenamiento (S3 + logs)
+from util.storage import load_csv, save_csv
+
+# Rutas de entrada/salida relativas a la raíz del repo
+CSV_INPUT = "data/registros_sesiones_merged.csv"
+CSV_SESIONES_OUT = "data/merito_productivo/sessions_with_prod_ajustada.csv"
+CSV_VACAS_OUT = "data/merito_productivo/merito_productivo_vacas.csv"
 
 
 def normalize_column(name: str) -> str:
@@ -33,7 +42,14 @@ def normalize_column(name: str) -> str:
 
 def main():
     print(f"Leyendo sesiones desde: {CSV_INPUT}")
-    df = pd.read_csv(CSV_INPUT)
+
+    # Leer usando load_csv (soporta local/S3 + logs)
+    df = load_csv(
+        CSV_INPUT,
+        resource_type="data",
+        purpose="merito_productivo_input",
+        script_name="merito_productivo.py",
+    )
 
     # Normalizar nombres de columnas
     df = df.rename(columns={c: normalize_column(c) for c in df.columns})
@@ -84,10 +100,7 @@ def main():
         group_cols = ["mes", "hora"]
         print(f"\nCalculando producción esperada condicional a {group_cols}...")
 
-    df["prod_esperada"] = (
-        df.groupby(group_cols)[PROD_COL]
-        .transform("mean")
-    )
+    df["prod_esperada"] = df.groupby(group_cols)[PROD_COL].transform("mean")
 
     # Producción Ajustada por sesión
     df["produccion_ajustada"] = df[PROD_COL] - df["prod_esperada"]
@@ -104,24 +117,19 @@ def main():
                 "prod_esperada",
                 "produccion_ajustada",
             ]
-        ]
-        .head()
+        ].head()
     )
 
     # --- 4) Calcular Mérito Productivo por vaca ---
-    # Fórmula:
-    # MéritoProductivo_i = (1 / N_i) * sum_{j=1..N_i} ProduccionAjustada_{i,j}
-    # donde:
-    #   i = vaca
-    #   j = sesión
-    #   N_i = número de ordeños de esa vaca
+    # MéritoProductivo_i = (1 / N_i) * sum ProduccionAjustada_{i,j}
+    # donde i = vaca, j = sesión, N_i = número de ordeños de esa vaca
 
     print("\nCalculando Mérito Productivo por vaca...")
 
     agg = (
         df.groupby(COW_ID_COL)
         .agg(
-            merito_productivo=("produccion_ajustada", "mean"),   # 1/N * suma
+            merito_productivo=("produccion_ajustada", "mean"),  # 1/N * suma
             produccion_ajustada_total=("produccion_ajustada", "sum"),
             n_ordenos=("produccion_ajustada", "size"),
             produccion_media_observada=(PROD_COL, "mean"),
@@ -132,19 +140,23 @@ def main():
     print("\nEjemplo de tabla de Mérito Productivo por vaca:")
     print(agg.head())
 
-    # --- 5) Guardar resultados ---
-    out_dir = os.path.dirname(CSV_SESIONES_OUT)
-    if out_dir:
-        os.makedirs(out_dir, exist_ok=True)
-
-    df.to_csv(CSV_SESIONES_OUT, index=False)
+    # --- 5) Guardar resultados (local + S3 + logs) ---
+    save_csv(
+        df,
+        CSV_SESIONES_OUT,
+        resource_type="data",
+        purpose="merito_productivo_sessions",
+        script_name="merito_productivo.py",
+    )
     print(f"\nSesiones con ProduccionAjustada guardadas en: {CSV_SESIONES_OUT}")
 
-    out_dir_v = os.path.dirname(CSV_VACAS_OUT)
-    if out_dir_v:
-        os.makedirs(out_dir_v, exist_ok=True)
-
-    agg.to_csv(CSV_VACAS_OUT, index=False)
+    save_csv(
+        agg,
+        CSV_VACAS_OUT,
+        resource_type="data",
+        purpose="merito_productivo_vacas",
+        script_name="merito_productivo.py",
+    )
     print(f"Tabla de Mérito Productivo por vaca guardada en: {CSV_VACAS_OUT}")
 
     print("\nCálculo de Mérito Productivo terminado correctamente.")

@@ -1,34 +1,42 @@
-# integration_v1.py
+# integration_v2.py
 #
 # Cálculo del Índice de Mérito para la Retención (IMR) para una vaca nueva
 # a partir de su CSV de ordeños, usando:
 # - Pipeline de Random Forest (comportamiento)
 # - Pipeline de Isolation Forest (sanidad)
-# - Mérito productivo precalculado
+# - Mérito productivo precalculado (y actualización si la vaca es nueva)
 #
-# Uso desde consola:
-#   python3 integration_v1.py --csv data/prediccion/6178.csv --cow-id 6178
+# Uso desde consola (desde la raíz del repo):
+#   python3 integration_v2.py --csv data/input/1554.csv --cow-id 1554
 #
 
 import os
+import sys
 import argparse
 import re
 import unicodedata
 
 import numpy as np
 import pandas as pd
-import joblib
 
 from data.etl_vaca_single import build_merged_from_single  # asegúrate de que data/ tenga __init__.py
 
+# --- asegurar raíz del proyecto en sys.path ---
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+# helpers de almacenamiento (S3 + logs)
+from util.storage import load_model, load_csv, save_csv
 
 # ==========================
 # 0) Rutas de modelos y datos
 # ==========================
 
-BEHAVIOR_MODEL_PATH = "models/trained_models/comportamiento_rf_pipeline.joblib"
-HEALTH_MODEL_PATH   = "models/trained_models/iso_sanidad_pipeline.joblib"
-MERITO_CSV_PATH     = "data/merito_productivo/merito_productivo_vacas.csv"
+BEHAVIOR_MODEL_PATH    = "trained_models/randomForest/comportamiento_rf_best_pipeline_v2.1.joblib"
+HEALTH_MODEL_PATH      = "trained_models/isolationForest/iso_sanidad_pipeline_v2.1.joblib"
+MERITO_CSV_PATH        = "data/merito_productivo/merito_productivo_vacas.csv"
+MERITO_SESIONES_PATH   = "data/merito_productivo/sessions_with_prod_ajustada.csv"
 
 
 # ==========================
@@ -37,20 +45,31 @@ MERITO_CSV_PATH     = "data/merito_productivo/merito_productivo_vacas.csv"
 
 def load_behavior_model(path: str):
     """
-    Carga el pipeline de Random Forest de comportamiento guardado con joblib.
+    Carga el pipeline de Random Forest de comportamiento guardado.
     Debe ser un Pipeline sklearn con:
         imputer -> scaler -> RandomForestClassifier
     """
-    return joblib.load(path)
+    return load_model(
+        path,
+        resource_type="model",
+        purpose="integration_behavior_model",
+        script_name="integration_v2.py",
+    )
 
 
 def load_health_model(path: str):
     """
-    Carga el pipeline de IsolationForest de sanidad guardado con joblib.
-    Debe ser un Pipeline sklearn con:
-        imputer -> scaler -> IsolationForest
+    Carga el pipeline de IsolationForest de sanidad guardado.
+    Soporta:
+      - v2.0: imputer -> scaler -> iso
+      - v2.1: preprocessor -> iso
     """
-    return joblib.load(path)
+    return load_model(
+        path,
+        resource_type="model",
+        purpose="integration_health_model",
+        script_name="integration_v2.py",
+    )
 
 
 # ==========================
@@ -173,6 +192,7 @@ def build_health_features_from_merged(df_merged: pd.DataFrame) -> pd.DataFrame:
 
     X_health = df[health_feature_cols].copy()
 
+    # Asegurar numérico + imputar medianas (versión correcta)
     for c in X_health.columns:
         X_health[c] = pd.to_numeric(X_health[c], errors="coerce")
         med = X_health[c].median()
@@ -182,22 +202,156 @@ def build_health_features_from_merged(df_merged: pd.DataFrame) -> pd.DataFrame:
 
 
 # ==========================
-# 3) Cargar mérito productivo de esa vaca
+# 3) Mérito productivo: cálculo on-the-fly para vacas nuevas
 # ==========================
 
-def load_merito_for_cow(cow_id: int, merito_csv_path: str) -> float:
+def _compute_merito_from_df_single_cow(df_merged: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Reproduce la lógica de merito_productivo.py pero SOLO para esta vaca.
+    Devuelve:
+      - df_sesiones: sesiones con columnas prod_esperada y produccion_ajustada
+      - df_vaca: una fila con columnas
+            [id, merito_productivo, produccion_ajustada_total, n_ordenos, produccion_media_observada]
+    """
+    from copy import deepcopy
+
+    df = deepcopy(df_merged)
+
+    # Normalizar nombres de columnas igual que merito_productivo.py
+    df = df.rename(columns={c: normalize_column(c) for c in df.columns})
+
+    COW_ID_COL = "id"
+    PROD_COL = "main_produccion_kg"
+    DATETIME_COL = "main_hora_de_inicio"
+
+    print("\n[merito_productivo] Calculando mérito solo para esta vaca nueva...")
+
+    # Parsear fecha/hora
+    df[DATETIME_COL] = pd.to_datetime(
+        df[DATETIME_COL],
+        dayfirst=True,
+        errors="coerce",
+    )
+
+    df["mes"] = df[DATETIME_COL].dt.month
+    df["hora"] = df[DATETIME_COL].dt.hour
+
+    # 👈 FIX: asegurar que la producción sea numérica antes de agrupar
+    df[PROD_COL] = pd.to_numeric(df[PROD_COL], errors="coerce")
+
+    before = len(df)
+    df = df.dropna(subset=[PROD_COL, "mes", "hora"])
+    after = len(df)
+    print(f"Filas válidas para mérito (vaca nueva): {after} (droppeadas {before - after})")
+
+    # Producción esperada por (mes, hora)
+    group_cols = ["mes", "hora"]
+    df["prod_esperada"] = df.groupby(group_cols)[PROD_COL].transform("mean")
+    df["produccion_ajustada"] = df[PROD_COL] - df["prod_esperada"]
+
+    # Agrupar por vaca (aquí solo hay una)
+    agg = (
+        df.groupby(COW_ID_COL)
+        .agg(
+            merito_productivo=("produccion_ajustada", "mean"),
+            produccion_ajustada_total=("produccion_ajustada", "sum"),
+            n_ordenos=("produccion_ajustada", "size"),
+            produccion_media_observada=(PROD_COL, "mean"),
+        )
+        .reset_index()
+    )
+
+    return df, agg
+
+
+def load_merito_for_cow(
+    cow_id: int,
+    merito_csv_path: str,
+    df_merged_for_new: pd.DataFrame | None = None,
+) -> float:
     """
     Carga el mérito productivo precomputado para una vaca desde
     merito_productivo_vacas.csv, donde tienes columnas:
-    id, merito_productivo, n_ordenos, ...
+      id, merito_productivo, n_ordenos, ...
+    Si la vaca NO existe y se proporciona df_merged_for_new:
+      - Calcula su mérito productivo a partir de su df_merged
+      - Actualiza:
+          - data/merito_productivo/sessions_with_prod_ajustada.csv
+          - data/merito_productivo/merito_productivo_vacas.csv
+      - Devuelve el mérito calculado.
     """
-    df_mer = pd.read_csv(merito_csv_path)
+    try:
+        df_mer = load_csv(
+            merito_csv_path,
+            resource_type="data",
+            purpose="integration_merito_productivo",
+            script_name="integration_v2.py",
+        )
+    except FileNotFoundError:
+        # Si no existe el archivo, empezamos desde cero
+        df_mer = pd.DataFrame(
+            columns=[
+                "id",
+                "merito_productivo",
+                "produccion_ajustada_total",
+                "n_ordenos",
+                "produccion_media_observada",
+            ]
+        )
+
     row = df_mer[df_mer["id"] == cow_id]
 
-    if row.empty:
-        raise ValueError(f"No se encontró mérito productivo para vaca id={cow_id}")
+    if not row.empty:
+        # Ya existe el mérito para esta vaca
+        return float(row["merito_productivo"].iloc[0])
 
-    return float(row["merito_productivo"].iloc[0])
+    # Si no existe y no nos dieron df_merged, no podemos calcular
+    if df_merged_for_new is None:
+        raise ValueError(
+            f"No se encontró mérito productivo para vaca id={cow_id} "
+            f"y no se proporcionó df_merged para calcularlo."
+        )
+
+    # === Calcular mérito solo para esta vaca nueva ===
+    df_sesiones_new, df_vaca_new = _compute_merito_from_df_single_cow(df_merged_for_new)
+
+    # 1) Actualizar CSV de sesiones con produccion_ajustada
+    try:
+        df_sesiones_all = load_csv(
+            MERITO_SESIONES_PATH,
+            resource_type="data",
+            purpose="integration_merito_sesiones",
+            script_name="integration_v2.py",
+        )
+        df_sesiones_all = pd.concat([df_sesiones_all, df_sesiones_new], ignore_index=True)
+    except FileNotFoundError:
+        df_sesiones_all = df_sesiones_new
+
+    save_csv(
+        df_sesiones_all,
+        MERITO_SESIONES_PATH,
+        resource_type="data",
+        purpose="integration_merito_sesiones",
+        script_name="integration_v2.py",
+    )
+
+    # 2) Actualizar CSV de mérito por vaca
+    df_mer_all = pd.concat([df_mer, df_vaca_new], ignore_index=True)
+
+    save_csv(
+        df_mer_all,
+        merito_csv_path,
+        resource_type="data",
+        purpose="integration_merito_productivo",
+        script_name="integration_v2.py",
+    )
+
+    merito_value = float(df_vaca_new["merito_productivo"].iloc[0])
+    print(
+        f"\n[Mérito] Vaca nueva id={cow_id} añadida a {merito_csv_path} "
+        f"con merito_productivo={merito_value:.4f}"
+    )
+    return merito_value
 
 
 # ==========================
@@ -261,23 +415,30 @@ def compute_imr_for_cow(cow_csv_path: str, cow_id: int | None = None):
     iso_pipeline = load_health_model(HEALTH_MODEL_PATH)
 
     # 4) Predicciones de comportamiento
-    # RandomForestClassifier dentro del pipeline:
-    # predict_proba -> columna 1 = probabilidad de clase "1" (inquieta)
     prob_inquieta_sesion = beh_pipeline.predict_proba(X_beh)[:, 1]
     riesgo_comportamiento = float(prob_inquieta_sesion.mean())
 
     # 5) Predicciones de sanidad
-    # IsolationForest dentro del pipeline:
-    # usamos -score_samples como score de anomalía (más alto = más raro)
-    X_imp = iso_pipeline.named_steps["imputer"].transform(X_health)
-    X_scaled = iso_pipeline.named_steps["scaler"].transform(X_imp)
-    iso_model = iso_pipeline.named_steps["iso"]
+    # Soporta ambos formatos de pipeline:
+    # - v2.0: imputer -> scaler -> iso
+    # - v2.1: preprocessor -> iso
+    if "preprocessor" in iso_pipeline.named_steps:
+        X_trans = iso_pipeline.named_steps["preprocessor"].transform(X_health)
+        iso_model = iso_pipeline.named_steps["iso"]
+    else:
+        X_imp = iso_pipeline.named_steps["imputer"].transform(X_health)
+        X_trans = iso_pipeline.named_steps["scaler"].transform(X_imp)
+        iso_model = iso_pipeline.named_steps["iso"]
 
-    anomaly_score_sesion = -iso_model.score_samples(X_scaled)
+    anomaly_score_sesion = -iso_model.score_samples(X_trans)
     riesgo_sanidad = float(anomaly_score_sesion.mean())
 
-    # 6) Cargar mérito productivo de esa vaca
-    merito_prod = load_merito_for_cow(cow_id_final, MERITO_CSV_PATH)
+    # 6) Cargar (o calcular) mérito productivo de esa vaca
+    merito_prod = load_merito_for_cow(
+        cow_id_final,
+        MERITO_CSV_PATH,
+        df_merged_for_new=df_merged,
+    )
 
     # 7) Calcular Z() para cada componente
     Z_G = z_score(merito_prod, MU_G, SIG_G)
@@ -285,7 +446,6 @@ def compute_imr_for_cow(cow_csv_path: str, cow_id: int | None = None):
     Z_S = z_score(riesgo_sanidad, MU_S, SIG_S)
 
     # 8) IMR según la fórmula de la documentación:
-    # IMR_i = wG·Z(MeritoProductivo_i) − wC·Z(RiesgoComport_i) − wS·Z(RiesgoSanidad_i)
     imr = W_G * Z_G - W_C * Z_C - W_S * Z_S
 
     # 9) Clasificación según p40/p75
@@ -315,7 +475,7 @@ def main():
     parser.add_argument(
         "--csv",
         required=True,
-        help="Ruta al CSV crudo de la vaca (ej. data/prediccion/6178.csv)",
+        help="Ruta al CSV crudo de la vaca (ej. data/input/1554.csv)",
     )
     parser.add_argument(
         "--cow-id",
