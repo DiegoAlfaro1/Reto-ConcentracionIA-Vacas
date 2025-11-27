@@ -6,28 +6,35 @@
 # - Pipeline de Isolation Forest (sanidad)
 # - Mérito productivo precalculado
 #
-# Uso desde consola:
-#   python3 integration_v1.py --csv data/prediccion/6178.csv --cow-id 6178
+# Uso desde consola (desde la raíz del repo):
+#   python3 integration_v1.py --csv data/input/1554.csv --cow-id 1554
 #
 
 import os
+import sys
 import argparse
 import re
 import unicodedata
 
 import numpy as np
 import pandas as pd
-import joblib
 
 from data.etl_vaca_single import build_merged_from_single  # asegúrate de que data/ tenga __init__.py
 
+# --- asegurar raíz del proyecto en sys.path ---
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+# helpers de almacenamiento (S3 + logs)
+from util.storage import load_model, load_csv
 
 # ==========================
 # 0) Rutas de modelos y datos
 # ==========================
 
-BEHAVIOR_MODEL_PATH = "models/trained_models/comportamiento_rf_pipeline.joblib"
-HEALTH_MODEL_PATH   = "models/trained_models/iso_sanidad_pipeline.joblib"
+BEHAVIOR_MODEL_PATH = "trained_models/randomForest/comportamiento_rf_best_pipeline_v2.1.joblib"
+HEALTH_MODEL_PATH   = "trained_models/isolationForest/iso_sanidad_pipeline_v2.1.joblib"
 MERITO_CSV_PATH     = "data/merito_productivo/merito_productivo_vacas.csv"
 
 
@@ -37,20 +44,30 @@ MERITO_CSV_PATH     = "data/merito_productivo/merito_productivo_vacas.csv"
 
 def load_behavior_model(path: str):
     """
-    Carga el pipeline de Random Forest de comportamiento guardado con joblib.
+    Carga el pipeline de Random Forest de comportamiento guardado.
     Debe ser un Pipeline sklearn con:
         imputer -> scaler -> RandomForestClassifier
     """
-    return joblib.load(path)
+    return load_model(
+        path,
+        resource_type="model",
+        purpose="integration_behavior_model",
+        script_name="integration_v1.py",
+    )
 
 
 def load_health_model(path: str):
     """
-    Carga el pipeline de IsolationForest de sanidad guardado con joblib.
+    Carga el pipeline de IsolationForest de sanidad guardado.
     Debe ser un Pipeline sklearn con:
         imputer -> scaler -> IsolationForest
     """
-    return joblib.load(path)
+    return load_model(
+        path,
+        resource_type="model",
+        purpose="integration_health_model",
+        script_name="integration_v1.py",
+    )
 
 
 # ==========================
@@ -191,7 +208,12 @@ def load_merito_for_cow(cow_id: int, merito_csv_path: str) -> float:
     merito_productivo_vacas.csv, donde tienes columnas:
     id, merito_productivo, n_ordenos, ...
     """
-    df_mer = pd.read_csv(merito_csv_path)
+    df_mer = load_csv(
+        merito_csv_path,
+        resource_type="data",
+        purpose="integration_merito_productivo",
+        script_name="integration_v1.py",
+    )
     row = df_mer[df_mer["id"] == cow_id]
 
     if row.empty:
@@ -261,19 +283,24 @@ def compute_imr_for_cow(cow_csv_path: str, cow_id: int | None = None):
     iso_pipeline = load_health_model(HEALTH_MODEL_PATH)
 
     # 4) Predicciones de comportamiento
-    # RandomForestClassifier dentro del pipeline:
-    # predict_proba -> columna 1 = probabilidad de clase "1" (inquieta)
     prob_inquieta_sesion = beh_pipeline.predict_proba(X_beh)[:, 1]
     riesgo_comportamiento = float(prob_inquieta_sesion.mean())
 
     # 5) Predicciones de sanidad
-    # IsolationForest dentro del pipeline:
-    # usamos -score_samples como score de anomalía (más alto = más raro)
-    X_imp = iso_pipeline.named_steps["imputer"].transform(X_health)
-    X_scaled = iso_pipeline.named_steps["scaler"].transform(X_imp)
-    iso_model = iso_pipeline.named_steps["iso"]
+    # Soporta ambos formatos de pipeline:
+    # - v2.0: imputer -> scaler -> iso
+    # - v2.1: preprocessor -> iso
+    if "preprocessor" in iso_pipeline.named_steps:
+        # v2.1
+        X_trans = iso_pipeline.named_steps["preprocessor"].transform(X_health)
+        iso_model = iso_pipeline.named_steps["iso"]
+    else:
+        # v2.0
+        X_imp = iso_pipeline.named_steps["imputer"].transform(X_health)
+        X_trans = iso_pipeline.named_steps["scaler"].transform(X_imp)
+        iso_model = iso_pipeline.named_steps["iso"]
 
-    anomaly_score_sesion = -iso_model.score_samples(X_scaled)
+    anomaly_score_sesion = -iso_model.score_samples(X_trans)
     riesgo_sanidad = float(anomaly_score_sesion.mean())
 
     # 6) Cargar mérito productivo de esa vaca
@@ -285,7 +312,6 @@ def compute_imr_for_cow(cow_csv_path: str, cow_id: int | None = None):
     Z_S = z_score(riesgo_sanidad, MU_S, SIG_S)
 
     # 8) IMR según la fórmula de la documentación:
-    # IMR_i = wG·Z(MeritoProductivo_i) − wC·Z(RiesgoComport_i) − wS·Z(RiesgoSanidad_i)
     imr = W_G * Z_G - W_C * Z_C - W_S * Z_S
 
     # 9) Clasificación según p40/p75
@@ -303,7 +329,6 @@ def compute_imr_for_cow(cow_csv_path: str, cow_id: int | None = None):
         "decision": decision,
     }
 
-
 # ==========================
 # 6) CLI para meter el CSV de una vaca
 # ==========================
@@ -315,7 +340,7 @@ def main():
     parser.add_argument(
         "--csv",
         required=True,
-        help="Ruta al CSV crudo de la vaca (ej. data/prediccion/6178.csv)",
+        help="Ruta al CSV crudo de la vaca (ej. data/input/1554.csv)",
     )
     parser.add_argument(
         "--cow-id",

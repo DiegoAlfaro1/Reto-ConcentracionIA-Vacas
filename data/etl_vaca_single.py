@@ -1,7 +1,16 @@
 # etl_vaca_single.py
 
 import os
+import sys
 import pandas as pd
+
+# --- asegurar raíz del proyecto en sys.path ---
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+# helpers de almacenamiento (S3 + logs)
+from util.storage import load_csv
 
 
 REG_COLUMNS = [
@@ -48,7 +57,14 @@ def build_merged_from_single(raw_path: str, cow_id: int | None = None) -> pd.Dat
     y lo convierte a un DataFrame con las MISMAS columnas que
     registros_sesiones_merged.csv.
     """
-    df = pd.read_csv(raw_path)
+    # Antes: df = pd.read_csv(raw_path)
+    # Ahora: usar load_csv para soportar S3 + logs
+    df = load_csv(
+        raw_path,
+        resource_type="data",
+        purpose="etl_vaca_single_input",
+        script_name="etl_vaca_single.py",
+    )
 
     # Fila 0 = nombres "bonitos" en español (no los usamos directamente aquí)
     header = df.iloc[0]

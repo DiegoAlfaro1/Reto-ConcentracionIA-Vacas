@@ -1,9 +1,10 @@
 # comportamiento_rf_v2.1.py
 # Uso desde consola:
-# python3 models/comportamiento_rf_v2.1.py
+#   python3 models/comportamiento_rf_v2.1.py
 # Random Forest con Hyperparameter Tuning (GridSearchCV)
 
 import os
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,8 +14,20 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import StratifiedKFold, GridSearchCV, cross_validate, cross_val_predict
+from sklearn.model_selection import (
+    StratifiedKFold,
+    GridSearchCV,
+    cross_validate,
+    cross_val_predict,
+)
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+# --- helpers de almacenamiento (S3 + logs) ---
+from util.storage import load_csv, save_csv, save_model
 
 CSV_BEHAVIOR = "data/sessions_behavior.csv"
 RESULTS_DIR = "results/randomForest/"
@@ -27,11 +40,13 @@ def main():
     os.makedirs(MODELS_DIR, exist_ok=True)
 
     print(f"Leyendo dataset de comportamiento: {CSV_BEHAVIOR}")
-    if not os.path.exists(CSV_BEHAVIOR):
-        print(f"Error: No se encontró el archivo {CSV_BEHAVIOR}")
-        return
-        
-    df = pd.read_csv(CSV_BEHAVIOR)
+    # Usa load_csv para soportar local + S3 + logs
+    df = load_csv(
+        CSV_BEHAVIOR,
+        resource_type="data",
+        purpose="rf_comportamiento_gridsearch_input_v2.1",
+        script_name="comportamiento_rf_v2.1.py",
+    )
 
     # Separar features y target
     X = df.drop(columns=["label_inquieta"])
@@ -46,17 +61,17 @@ def main():
         steps=[
             ("imputer", SimpleImputer(strategy="median")),
             ("scaler", StandardScaler()),
-            ("rf", RandomForestClassifier(random_state=42, n_jobs=-1))
+            ("rf", RandomForestClassifier(random_state=42, n_jobs=-1)),
         ]
     )
 
     # Definir el grid de hiperparámetros
     param_grid = {
-        'rf__n_estimators': [100, 200, 300],
-        'rf__max_depth': [None, 10, 20],
-        'rf__min_samples_split': [2, 5],
-        'rf__min_samples_leaf': [1, 2, 4],
-        'rf__class_weight': ['balanced', None]
+        "rf__n_estimators": [100, 200, 300],
+        "rf__max_depth": [None, 10, 20],
+        "rf__min_samples_split": [2, 5],
+        "rf__min_samples_leaf": [1, 2, 4],
+        "rf__class_weight": ["balanced", None],
     }
 
     # K-Fold (3 folds estratificado)
@@ -66,14 +81,14 @@ def main():
 
     print("Iniciando GridSearchCV...")
     print(f"Grid: {param_grid}")
-    
+
     grid_search = GridSearchCV(
         estimator=rf_pipeline,
         param_grid=param_grid,
         cv=cv,
         scoring=scoring,
         n_jobs=-1,
-        verbose=2
+        verbose=2,
     )
 
     grid_search.fit(X, y)
@@ -86,15 +101,22 @@ def main():
     # Obtener el mejor modelo
     best_model = grid_search.best_estimator_
 
-    # Guardar el mejor modelo
     model_path = os.path.join(MODELS_DIR, "comportamiento_rf_best_pipeline_v2.1.joblib")
-    joblib.dump(best_model, model_path)
+    save_model(
+        best_model,
+        model_path,
+        resource_type="model",
+        purpose="rf_comportamiento_best_grid_v2.1",
+        script_name="comportamiento_rf_v2.1.py",
+    )
     print(f"\nMejor Pipeline de Random Forest guardado en: {model_path}")
 
-    # Opcional: Mostrar resultados detallados de los top 5
     results_df = pd.DataFrame(grid_search.cv_results_)
     print("\nTop 5 configuraciones:")
-    print(results_df.sort_values(by="rank_test_score").head(5)[["params", "mean_test_score", "std_test_score"]])
+    print(
+        results_df.sort_values(by="rank_test_score")
+        .head(5)[["params", "mean_test_score", "std_test_score"]]
+    )
 
     # ---------------------------------------------------
     # Validación cruzada con las mejores métricas (para gráficas)
@@ -106,7 +128,9 @@ def main():
         "f1": "f1",
     }
 
-    print("\nEjecutando 3-fold cross-validation con el mejor modelo para generar gráficas...")
+    print(
+        "\nEjecutando 3-fold cross-validation con el mejor modelo para generar gráficas..."
+    )
     cv_results = cross_validate(
         best_model,
         X,
@@ -152,7 +176,15 @@ def main():
 
     df_metrics = pd.DataFrame(table_data)
     metrics_csv_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_table_v2.1.csv")
-    df_metrics.to_csv(metrics_csv_path, index=False)
+
+    # Guardar tabla de métricas con save_csv (local + S3 + log)
+    save_csv(
+        df_metrics,
+        metrics_csv_path,
+        resource_type="results",
+        purpose="rf_comportamiento_metrics_v2.1",
+        script_name="comportamiento_rf_v2.1.py",
+    )
     print("\nTabla de métricas por fold guardada en:")
     print(metrics_csv_path)
     print(df_metrics, "\n")
@@ -167,7 +199,9 @@ def main():
     ax.set_xticks(x)
     ax.set_xticklabels(metric_names)
     ax.set_ylabel("Score")
-    ax.set_title("Random Forest Optimizado - 3-fold CV (métrica promedio ± std)")
+    ax.set_title(
+        "Random Forest Optimizado - 3-fold CV (métrica promedio ± std)"
+    )
 
     fig.tight_layout()
     out_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_bar_v2.1.png")
@@ -200,7 +234,9 @@ def main():
     # ---------------------------------------------------
     # Matriz de confusión usando predicciones de CV
     # ---------------------------------------------------
-    print("\nCalculando matriz de confusión con cross_val_predict (modelo optimizado)...")
+    print(
+        "\nCalculando matriz de confusión con cross_val_predict (modelo optimizado)..."
+    )
     y_pred_cv = cross_val_predict(
         best_model,
         X,
@@ -213,7 +249,9 @@ def main():
     fig, ax = plt.subplots()
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
     disp.plot(ax=ax, colorbar=False)
-    ax.set_title("Matriz de confusión - Random Forest Optimizado (3-fold CV)")
+    ax.set_title(
+        "Matriz de confusión - Random Forest Optimizado (3-fold CV)"
+    )
     fig.tight_layout()
 
     cm_path = os.path.join(RESULTS_DIR, "rf_cv_confusion_matrix_v2.1.png")
