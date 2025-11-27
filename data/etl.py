@@ -1,17 +1,27 @@
 # etl_sesiones.py
-# Uso desde consola:
-# python3 data/etl.py
+# Uso desde consola (desde la raíz del repo):
+#   python3 data/etl.py
+#   o
+#   python3 -m data.etl
 
 import unicodedata
 import re
+import os
+import sys
 
 import numpy as np
 import pandas as pd
 
+# Asegurar que la raíz del proyecto esté en sys.path
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
 
-CSV_INPUT = "datos/registros_sesiones_merged.csv"
-CSV_BEHAVIOR = "sessions_behavior.csv"
-CSV_HEALTH = "datos/sessions_health.csv"
+from util.storage import load_csv, save_csv
+
+CSV_INPUT = "data/registros_sesiones_merged.csv"
+CSV_BEHAVIOR = "data/sessions_behavior.csv"
+CSV_HEALTH = "data/sessions_health.csv"
 
 
 def normalize_column(name: str) -> str:
@@ -46,7 +56,13 @@ def parse_duration_mm_ss(value):
 
 def main():
     print(f"Leyendo CSV de sesiones: {CSV_INPUT}")
-    df = pd.read_csv(CSV_INPUT)
+    # df = pd.read_csv(CSV_INPUT)
+    df = load_csv(
+        CSV_INPUT,
+        resource_type="data",
+        purpose="etl_sesiones_input",
+        script_name="etl_sesiones.py",
+    )
 
     # Normalizar nombres de columnas
     df = df.rename(columns={c: normalize_column(c) for c in df.columns})
@@ -104,7 +120,15 @@ def main():
     df_behavior = df[behavior_feature_cols + ["label_inquieta"]].copy()
     print(f"\nGuardando dataset de comportamiento en {CSV_BEHAVIOR}")
     print(df_behavior.head())
-    df_behavior.to_csv(CSV_BEHAVIOR, index=False)
+
+    # df_behavior.to_csv(CSV_BEHAVIOR, index=False)
+    save_csv(
+        df_behavior,
+        CSV_BEHAVIOR,
+        resource_type="data",
+        purpose="etl_sesiones_behavior",
+        script_name="etl_sesiones.py",
+    )
 
     # --------------------------
     # Dataset de SANIDAD (ISO)
@@ -139,7 +163,15 @@ def main():
     df_health = df[health_feature_cols].copy()
     print(f"\nGuardando dataset de sanidad en {CSV_HEALTH}")
     print(df_health.head())
-    df_health.to_csv(CSV_HEALTH, index=False)
+
+    # df_health.to_csv(CSV_HEALTH, index=False)
+    save_csv(
+        df_health,
+        CSV_HEALTH,
+        resource_type="data",
+        purpose="etl_sesiones_health",
+        script_name="etl_sesiones.py",
+    )
 
     print("\nETL terminado correctamente.")
 
