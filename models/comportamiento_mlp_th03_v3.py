@@ -1,12 +1,13 @@
 # comportamiento_mlp_th03_v3.py
 # Uso desde consola:
-# python3 models/comportamiento_mlp_th03_v3.py
+#   python3 models/comportamiento_mlp_th03_v3.py
+#
 # Red neuronal MLP para clasificar el comportamiento de las vacas
-# Umbral de clasificación: 0.3 (optimizado para F!-score)
+# Umbral de clasificación: se optimiza a partir de F1-score
 
-# Librerías
 import os
-import csv
+import sys
+import csv  # ya casi no lo usamos, pero lo dejamos por si quieres algo manual
 
 import numpy as np
 import pandas as pd
@@ -21,12 +22,32 @@ from sklearn.utils import class_weight
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, StratifiedKFold
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    confusion_matrix,
+    ConfusionMatrixDisplay,
+)
+
+# --- asegurar raíz del proyecto en sys.path ---
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+# helpers de almacenamiento (S3 + logs)
+from util.storage import load_csv, save_csv, save_model
 
 # Variables globales
-CSV_BEHAVIOR = "data/sessions_behavior.csv"  # CSV con los datos
-RESULTS_DIR = "results/MLP/"  # Directorio para guardar resultados
-MODELS_DIR = "trained_models/MLP/"  # Directorio para guardar modelos
+CSV_BEHAVIOR = "data/sessions_behavior.csv"      # CSV con los datos
+RESULTS_DIR = "results/MLP/"                     # Directorio para guardar resultados
+MODELS_DIR = "trained_models/MLP/"               # Directorio para guardar modelos
+
+# CSVs de logs
+METRICS_CSV_PATH = os.path.join(RESULTS_DIR, "mlp_cv_metrics.csv")
+CV_FOLDS_CSV_PATH = os.path.join(RESULTS_DIR, "mlp_cv_folds_metrics.csv")
+THRESHOLDS_CSV_PATH = os.path.join(RESULTS_DIR, "mlp_threshold_search.csv")
 
 
 def genModel(X_train, y_train):
@@ -44,32 +65,34 @@ def genModel(X_train, y_train):
     data_shape = X_train.shape
 
     # Declarar modelo
-    model = keras.Sequential([
-        # Entrada
-        layers.Input(shape=(data_shape[1],)),
-        # Capas ocultas
-        layers.Dense(64, activation='relu'),
-        layers.Dropout(0.2),
-        layers.Dense(32, activation='relu'),
-        # Salida
-        layers.Dense(1, activation='sigmoid')
-    ])
+    model = keras.Sequential(
+        [
+            # Entrada
+            layers.Input(shape=(data_shape[1],)),
+            # Capas ocultas
+            layers.Dense(64, activation="relu"),
+            layers.Dropout(0.2),
+            layers.Dense(32, activation="relu"),
+            # Salida
+            layers.Dense(1, activation="sigmoid"),
+        ]
+    )
 
     # Calcular peso para clases no balanceadas
     classes = np.unique(y_train)
     cw = class_weight.compute_class_weight(
-        class_weight='balanced',
+        class_weight="balanced",
         classes=classes,
-        y=y_train
-        )
+        y=y_train,
+    )
 
     cw_dict = dict(zip(classes, cw))
 
     # Es un problema de clasificación binaria
     model.compile(
-        optimizer='adam',
-        loss='binary_crossentropy',
-        metrics=['accuracy']
+        optimizer="adam",
+        loss="binary_crossentropy",
+        metrics=["accuracy"],
     )
 
     return model, cw_dict
@@ -84,16 +107,22 @@ def crossVal(X_train, y_train):
     - X_train: matriz de características para entrenamiento.
     - y_train: vector de etiquetas para entrenamiento.
 
-    No retorna nada.
+    Retorna:
+    - fold_scores: lista de diccionarios con métricas por fold.
     """
     skf = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
-    scores = []
-    print("Iniciando validación cruzada...")
+    fold_scores = []
+    print("[MLP] Iniciando validación cruzada...")
 
     # Iterar por los folds
-    for train_index, val_index in skf.split(X_train, y_train):
+    for fold_idx, (train_index, val_index) in enumerate(
+        skf.split(X_train, y_train), start=1
+    ):
         X_train_fold, X_val_fold = X_train[train_index], X_train[val_index]
-        y_train_fold, y_val_fold = y_train.iloc[train_index], y_train.iloc[val_index]
+        y_train_fold, y_val_fold = (
+            y_train.iloc[train_index],
+            y_train.iloc[val_index],
+        )
 
         # Crear y entrenar el modelo con cada fold
         mlp, W = genModel(X_train_fold, y_train_fold)
@@ -103,19 +132,44 @@ def crossVal(X_train, y_train):
             epochs=20,
             batch_size=32,
             verbose=0,
-            class_weight=W
-            )
-        # Evaluar la périda por fold y promedio
-        _, val_acc = mlp.evaluate(X_val_fold, y_val_fold, verbose=0)
-        scores.append(val_acc)
-        print(f"Precisión de validación: {val_acc}")
+            class_weight=W,
+        )
 
-    print(f"Precisión promedio de validación: {np.mean(scores)}")
+        # Evaluar por fold
+        y_val_prob = mlp.predict(X_val_fold, verbose=0)
+        y_val_pred = (y_val_prob >= 0.5).astype(int)
+
+        acc = accuracy_score(y_val_fold, y_val_pred)
+        prec = precision_score(y_val_fold, y_val_pred)
+        rec = recall_score(y_val_fold, y_val_pred)
+        f1 = f1_score(y_val_fold, y_val_pred)
+
+        fold_scores.append(
+            {
+                "fold": fold_idx,
+                "accuracy": acc,
+                "precision": prec,
+                "recall": rec,
+                "f1": f1,
+            }
+        )
+
+        print(
+            f"[MLP] Fold {fold_idx}: "
+            f"acc={acc:.3f}, prec={prec:.3f}, rec={rec:.3f}, f1={f1:.3f}"
+        )
+
+    print(
+        "[MLP] Precisión promedio de validación:",
+        np.mean([fs["accuracy"] for fs in fold_scores]),
+    )
+    return fold_scores
 
 
 def best_threshold(model, X_train, y_train):
     """
     Función para encontrar el mejor umbral de clasificación basado en F1-score.
+
     Parámetros:
     - model: modelo entrenado.
     - X_train: matriz de características para entrenamiento.
@@ -123,27 +177,37 @@ def best_threshold(model, X_train, y_train):
 
     Retorna:
     - best_threshold: umbral que maximiza el F1-score.
+    - threshold_history: lista de dicts con threshold y F1 obtenido.
     """
     best_threshold = 0.5
-    best_f1 = 0
+    best_f1 = 0.0
+    threshold_history = []
+
     y_pred_prob = model.predict(X_train)  # Probabilidades predichas
-    print("Calculando mejores thresholds...")
+    print("[MLP] Calculando mejores thresholds...")
 
     # Probar cada posible valor de umbral
     for threshold in np.arange(0.1, 0.9, 0.1):
         y_pred = (y_pred_prob >= threshold).astype(int)
-        f1 = f1_score(y_train, y_pred)  # Se optimiza hacia F1
+        f1 = f1_score(y_train, y_pred)
+
+        threshold_history.append(
+            {
+                "threshold": float(threshold),
+                "f1": float(f1),
+            }
+        )
 
         # Guarda los mejores resultados
         if f1 > best_f1:
             best_f1 = f1
             best_threshold = threshold
-            print(f"Threshold: {threshold}, F1: {f1}")
+            print(f"[MLP] Threshold: {threshold}, F1: {f1}")
 
-    print("Resultados finales:")
-    print(f"Mejor threshold: {best_threshold} para mayor F1: {best_f1}")
+    print("[MLP] Resultados finales de búsqueda de threshold:")
+    print(f"[MLP] Mejor threshold: {best_threshold} para mayor F1: {best_f1}")
 
-    return best_threshold
+    return float(best_threshold), threshold_history
 
 
 def metrics(model, X_test, y_test, threshold):
@@ -162,27 +226,29 @@ def metrics(model, X_test, y_test, threshold):
     - confusion: matriz de confusión.
     """
     scores = {
-        "accuracy": 0,
-        "precision": 0,
-        "recall": 0,
-        "f1": 0
+        "accuracy": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "threshold": float(threshold),
     }
+
+    print("[MLP] Calculando métricas en test...")
     y_pred_prob = model.predict(X_test)
     y_pred = (y_pred_prob >= threshold).astype(int)
-    print("Calculando métricas...")
 
     # Matriz de confusión
     confusion = confusion_matrix(y_test, y_pred)
 
     # Puntuaciones
-    scores["accuracy"] = accuracy_score(y_test, y_pred)
-    scores["precision"] = precision_score(y_test, y_pred)
-    scores["recall"] = recall_score(y_test, y_pred)
-    scores["f1"] = f1_score(y_test, y_pred)
+    scores["accuracy"] = float(accuracy_score(y_test, y_pred))
+    scores["precision"] = float(precision_score(y_test, y_pred))
+    scores["recall"] = float(recall_score(y_test, y_pred))
+    scores["f1"] = float(f1_score(y_test, y_pred))
 
-    print("Resultados finales:")
-    print(f"Matriz de confusión:\n{confusion}")
-    print(f"Puntuaciones:\n{scores}")
+    print("[MLP] Resultados finales en test:")
+    print(f"[MLP] Matriz de confusión:\n{confusion}")
+    print(f"[MLP] Puntuaciones:\n{scores}")
 
     return scores, confusion
 
@@ -193,87 +259,162 @@ def main():
     os.makedirs(MODELS_DIR, exist_ok=True)
 
     # Cargar datos
-    print(f"Leyendo dataset de comportamiento: {CSV_BEHAVIOR}")
-    if not os.path.exists(CSV_BEHAVIOR):
-        print(f"Error: No se encontró el archivo {CSV_BEHAVIOR}")
+    print(f"[MLP] Leyendo dataset de comportamiento: {CSV_BEHAVIOR}")
+    try:
+        data = load_csv(
+            CSV_BEHAVIOR,
+            resource_type="data",
+            purpose="mlp_behavior_input",
+            script_name="comportamiento_mlp_th03_v3.py",
+        )
+    except FileNotFoundError:
+        print(f"[MLP][ERROR] No se encontró el archivo {CSV_BEHAVIOR}")
         return
-    data = pd.read_csv(CSV_BEHAVIOR)
 
     # Separar características y objetivo
     X = data.drop("label_inquieta", axis=1)
     y = data["label_inquieta"]
-    print("Forma de X:", X.shape)
-    print(f"Distribución de y:\n{y.value_counts()}")
+    print("[MLP] Forma de X:", X.shape)
+    print(f"[MLP] Distribución de y:\n{y.value_counts()}")
 
     # Separar set de entrenamiento y prueba
     X_train, X_test, y_train, y_test = train_test_split(
-       X, y,
-       test_size=0.2,
-       random_state=42,
-       stratify=y
-       )
+        X,
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=y,
+    )
 
     # Preprocesar
-    preprocess = Pipeline([
-        # Rellenar valores faltantes
-        ("imputer", SimpleImputer(strategy="median")),
-        # Normalizar todo por z-scores
-        ("scaler", StandardScaler())
-    ])
-    X_train = preprocess.fit_transform(X_train)
+    preprocess = Pipeline(
+        [
+            ("imputer", SimpleImputer(strategy="median")),
+            ("scaler", StandardScaler()),
+        ]
+    )
+    X_train_proc = preprocess.fit_transform(X_train)
     # Prevenir fuga de datos al preprocesar con los datos de entrenamiento
-    X_test = preprocess.transform(X_test)
+    X_test_proc = preprocess.transform(X_test)
 
-    # Validación cruzada
-    crossVal(X_train, y_train)
+    # Validación cruzada (logs por fold)
+    fold_scores = crossVal(X_train_proc, y_train)
 
-    # Entrenamiento
-    mlp, cw = genModel(X_train, y_train)
+    # Guardar métricas de CV en CSV (log)
+    df_folds = pd.DataFrame(fold_scores)
+    save_csv(
+        df_folds,
+        CV_FOLDS_CSV_PATH,
+        resource_type="data",
+        purpose="mlp_cv_folds_metrics",
+        script_name="comportamiento_mlp_th03_v3.py",
+    )
+
+    # Entrenamiento final
+    print("[MLP] Entrenando modelo final...")
+    mlp, cw = genModel(X_train_proc, y_train)
     mlp.fit(
-        X_train,
+        X_train_proc,
         y_train,
         epochs=40,
         batch_size=32,
         verbose=1,
-        class_weight=cw
+        class_weight=cw,
     )
-    threshold = best_threshold(mlp, X_train, y_train)
-    print("Entrenamiento completado.")
+    best_th, threshold_history = best_threshold(mlp, X_train_proc, y_train)
+    print("[MLP] Entrenamiento completado.")
 
-    # Métricas
-    scores, matrix = metrics(mlp, X_test, y_test, threshold)
+    # Guardar búsqueda de thresholds en CSV
+    df_th = pd.DataFrame(threshold_history)
+    save_csv(
+        df_th,
+        THRESHOLDS_CSV_PATH,
+        resource_type="data",
+        purpose="mlp_threshold_search",
+        script_name="comportamiento_mlp_th03_v3.py",
+    )
+
+    # Métricas finales en test
+    scores, matrix = metrics(mlp, X_test_proc, y_test, best_th)
 
     # Graficar resultados
-    print("Exportando resultados...")
+    print("[MLP] Exportando resultados visuales...")
     # Matriz de confusión
     plt.figure(figsize=(8, 6))
     disp = ConfusionMatrixDisplay(confusion_matrix=matrix)
     disp.plot()
-    plt.title("Matriz de confusión")
-    plt.savefig(
-       os.path.join(RESULTS_DIR, "mlp_cv_confusion_matrix.png"),
-       dpi=300
-       )
-    plt.show()
+    plt.title("Matriz de confusión (MLP)")
+    cm_path = os.path.join(RESULTS_DIR, "mlp_cv_confusion_matrix.png")
+    plt.savefig(cm_path, dpi=300)
+    plt.close()
+    print(f"[MLP] Matriz de confusión guardada en: {cm_path}")
 
     # Gráfico de barras con métricas
     plt.figure(figsize=(8, 6))
-    plt.bar(scores.keys(), scores.values())
-    plt.title("Métricas del modelo")
-    plt.savefig(os.path.join(RESULTS_DIR, "mlp_cv_metrics.png"), dpi=300)
-    plt.show()
+    plt.bar(["accuracy", "precision", "recall", "f1"], [
+        scores["accuracy"],
+        scores["precision"],
+        scores["recall"],
+        scores["f1"],
+    ])
+    plt.title("Métricas del modelo MLP")
+    metrics_img_path = os.path.join(RESULTS_DIR, "mlp_cv_metrics.png")
+    plt.savefig(metrics_img_path, dpi=300)
+    plt.close()
+    print(f"[MLP] Gráfico de métricas guardado en: {metrics_img_path}")
 
-    # Exportar métricas como CSV
-    with open(os.path.join(RESULTS_DIR, "mlp_cv_metrics.csv"), "w") as f:
-        writer = csv.writer(f)
-        writer.writerow(["metric", "value"])
-        for key, value in scores.items():
-            writer.writerow([key, value])
+    # Exportar métricas finales como CSV (via save_csv)
+    df_metrics = pd.DataFrame(
+        [
+            {
+                "metric": "accuracy",
+                "value": scores["accuracy"],
+            },
+            {
+                "metric": "precision",
+                "value": scores["precision"],
+            },
+            {
+                "metric": "recall",
+                "value": scores["recall"],
+            },
+            {
+                "metric": "f1",
+                "value": scores["f1"],
+            },
+            {
+                "metric": "threshold",
+                "value": scores["threshold"],
+            },
+        ]
+    )
+    save_csv(
+        df_metrics,
+        METRICS_CSV_PATH,
+        resource_type="data",
+        purpose="mlp_cv_metrics",
+        script_name="comportamiento_mlp_th03_v3.py",
+    )
+    print(f"[MLP] Métricas finales guardadas en: {METRICS_CSV_PATH}")
 
-    # Guardar modelo
-    print("Guardando modelo...")
-    mlp.save(os.path.join(MODELS_DIR, "comportamiento_mlp__th03_v3.h5"))
-    print("Modelo guardado.")
+    # Guardar modelo (local + S3/logs)
+    print("[MLP] Guardando modelo...")
+    model_path = os.path.join(MODELS_DIR, "comportamiento_mlp_th03_v3.h5")
+
+    # Guardado local estándar de Keras
+    mlp.save(model_path)
+
+    # Además, registrar/subir el modelo vía util.storage
+    save_model(
+        mlp,
+        model_path,
+        resource_type="model",
+        purpose="comportamiento_mlp_th03_v3",
+        script_name="comportamiento_mlp_th03_v3.py",
+    )
+
+    print(f"[MLP] Modelo guardado en: {model_path} (local + S3)")
+    print("[MLP] Pipeline completado correctamente.")
 
 
 if __name__ == "__main__":
