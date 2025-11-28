@@ -90,28 +90,53 @@ def main():
     cv_results = cross_validate(lr_pipeline, X, y, cv=cv, scoring=scoring)
 
     print("\n=== Resultados Regresión Logística (comportamiento) - 3 folds ===")
-    metrics_data = {"metric": [], "mean": [], "std": []}
+    metric_names = []
+    means = []
+    stds = []
+    per_fold_dict = {}
+
     for metric in scoring.keys():
         scores = cv_results[f"test_{metric}"]
-        metrics_data["metric"].append(metric)
-        metrics_data["mean"].append(scores.mean())
-        metrics_data["std"].append(scores.std())
-        print(f"{metric:9s}: mean={scores.mean():.3f}  std={scores.std():.3f}  folds={np.round(scores, 3)}")
+        metric_names.append(metric)
+        means.append(scores.mean())
+        stds.append(scores.std())
+        per_fold_dict[metric] = scores
 
-    # Guardar métricas en CSV (con logs)
-    df_metrics = pd.DataFrame(metrics_data)
-    metrics_path = os.path.join(RESULTS_DIR, "lr_cv_metrics.csv")
+        print(
+            f"{metric:9s}: "
+            f"mean={scores.mean():.3f}  std={scores.std():.3f}  "
+            f"folds={np.round(scores, 3)}"
+        )
+
+    # ==========================
+    # 4) Tabla de métricas por fold (CSV, estilo RF)
+    # ==========================
+    n_folds = len(per_fold_dict[metric_names[0]])
+    table_data = {"metric": metric_names}
+
+    for fold_idx in range(n_folds):
+        col_name = f"fold_{fold_idx + 1}"
+        table_data[col_name] = [per_fold_dict[m][fold_idx] for m in metric_names]
+
+    table_data["mean"] = means
+    table_data["std"] = stds
+
+    df_metrics = pd.DataFrame(table_data)
+    metrics_path = os.path.join(RESULTS_DIR, "lr_cv_metrics_table.csv")
+
     save_csv(
         df_metrics,
         metrics_path,
         resource_type="results",
-        purpose="lr_comportamiento_cv_metrics",
+        purpose="lr_comportamiento_cv_metrics_table",
         script_name=SCRIPT_NAME,
     )
-    print(f"\nMétricas guardadas en: {metrics_path}")
+    print("\nTabla de métricas por fold guardada en:")
+    print(metrics_path)
+    print(df_metrics, "\n")
 
     # ==========================
-    # 4) Matriz de confusión
+    # 5) Matriz de confusión
     # ==========================
     y_pred_cv = cross_val_predict(lr_pipeline, X, y, cv=cv)
     cm = confusion_matrix(y, y_pred_cv)
@@ -127,7 +152,7 @@ def main():
     print(f"Matriz de confusión guardada en: {out_path}")
 
     # ==========================
-    # 5) Entrenar modelo final y guardar (con logs)
+    # 6) Entrenar modelo final y guardar (con logs)
     # ==========================
     print("\nEntrenando modelo final con todos los datos...")
     lr_pipeline.fit(X, y)
