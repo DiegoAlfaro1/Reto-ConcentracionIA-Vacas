@@ -136,20 +136,23 @@ def main():
     print(df_metrics, "\n")
 
     # ==========================
-    # 5) Matriz de confusión
+    # 5) Visualización de métricas (HISTOGRAMA + BARPLOT MEAN±STD)
     # ==========================
-    y_pred_cv = cross_val_predict(lr_pipeline, X, y, cv=cv)
-    cm = confusion_matrix(y, y_pred_cv)
+    import seaborn as sns
 
-    fig, ax = plt.subplots()
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-    disp.plot(ax=ax, colorbar=False)
-    ax.set_title("Matriz de confusión - Regresión Logística (3-fold CV)")
-    fig.tight_layout()
-    out_path = os.path.join(RESULTS_DIR, "lr_cv_confusion_matrix.png")
-    fig.savefig(out_path, dpi=300)
-    plt.close(fig)
-    print(f"Matriz de confusión guardada en: {out_path}")
+    # --- Histograma de distribución de métricas por fold ---
+    for metric in metric_names:
+        scores = per_fold_dict[metric]
+        plt.figure(figsize=(7,5))
+        sns.histplot(scores, kde=True, bins=8)
+        plt.title(f"Distribución CV - {metric}")
+        plt.xlabel(metric)
+        plt.ylabel("Frecuencia")
+        hist_path = os.path.join(RESULTS_DIR, f"lr_hist_{metric}.png")
+        plt.savefig(hist_path, dpi=300)
+        plt.close()
+        print(f"Histograma guardado en: {hist_path}")
+
 
     # ==========================
     # 6) Entrenar modelo final y guardar (con logs)
