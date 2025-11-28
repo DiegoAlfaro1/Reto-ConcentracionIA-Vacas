@@ -109,7 +109,7 @@ def main():
         )
 
     # ==========================
-    # 4) Tabla de métricas por fold (CSV, estilo RF)
+    # 4) Tabla de métricas por fold
     # ==========================
     n_folds = len(per_fold_dict[metric_names[0]])
     table_data = {"metric": metric_names}
@@ -134,6 +134,33 @@ def main():
     print("\nTabla de métricas por fold guardada en:")
     print(metrics_path)
     print(df_metrics, "\n")
+
+        # ==========================
+    # 4.1) Métrica por fold (gráfico comparativo)
+    # ==========================
+    metric_names = list(scoring.keys())  # ['accuracy','precision','recall','f1']
+    per_fold_dict = {metric: cv_results[f"test_{metric}"] for metric in metric_names}
+
+    folds = np.arange(1, 4)
+
+    fig, ax = plt.subplots(figsize=(8,5))
+    for metric in metric_names:
+        scores = per_fold_dict[metric]
+        ax.plot(folds, scores, marker="o", label=metric)
+
+    ax.set_xticks(folds)
+    ax.set_xlabel("Fold")
+    ax.set_ylabel("Score")
+    ax.set_title("Regresión Logística - 3-fold CV por métrica")
+    ax.legend()
+    fig.tight_layout()
+
+    per_fold_png_path = os.path.join(RESULTS_DIR, "lr_cv_metrics_per_fold.png")
+    fig.savefig(per_fold_png_path, dpi=300)
+    plt.close(fig)
+
+    print(f"Gráfica de métricas por fold guardada en: {per_fold_png_path}\n")
+
 
     # ==========================
     # 5) Visualización de métricas (HISTOGRAMA + BARPLOT MEAN±STD)
