@@ -45,9 +45,10 @@ RESULTS_DIR = "results/MLP/"                     # Directorio para guardar resul
 MODELS_DIR = "trained_models/MLP/"               # Directorio para guardar modelos
 
 # CSVs de logs
-METRICS_CSV_PATH = os.path.join(RESULTS_DIR, "mlp_cv_metrics.csv")
-CV_FOLDS_CSV_PATH = os.path.join(RESULTS_DIR, "mlp_cv_folds_metrics.csv")
-THRESHOLDS_CSV_PATH = os.path.join(RESULTS_DIR, "mlp_threshold_search.csv")
+METRICS_CSV_PATH        = os.path.join(RESULTS_DIR, "mlp_cv_metrics.csv")
+CV_FOLDS_CSV_PATH       = os.path.join(RESULTS_DIR, "mlp_cv_folds_metrics.csv")
+THRESHOLDS_CSV_PATH     = os.path.join(RESULTS_DIR, "mlp_threshold_search.csv")
+METRICS_TABLE_CSV_PATH  = os.path.join(RESULTS_DIR, "mlp_cv_metrics_table.csv")  # tabla tipo RF
 
 
 def genModel(X_train, y_train):
@@ -300,7 +301,7 @@ def main():
     # Validación cruzada (logs por fold)
     fold_scores = crossVal(X_train_proc, y_train)
 
-    # Guardar métricas de CV en CSV (log)
+    # Guardar métricas de CV en CSV (log tipo "un fold por fila")
     df_folds = pd.DataFrame(fold_scores)
     save_csv(
         df_folds,
@@ -309,6 +310,65 @@ def main():
         purpose="mlp_cv_folds_metrics",
         script_name="comportamiento_mlp_th03_v3.py",
     )
+
+    # ==========================
+    # Tabla de métricas por fold
+    # ==========================
+    metric_names = ["accuracy", "precision", "recall", "f1"]
+    per_fold_dict = {
+        metric: np.array([fs[metric] for fs in fold_scores])
+        for metric in metric_names
+    }
+
+    means = [per_fold_dict[m].mean() for m in metric_names]
+    stds = [per_fold_dict[m].std() for m in metric_names]
+
+    n_folds = len(fold_scores)
+    table_data = {"metric": metric_names}
+
+    # columnas fold_1, fold_2, fold_3 ...
+    for fold_idx in range(n_folds):
+        col_name = f"fold_{fold_idx + 1}"
+        table_data[col_name] = [
+            per_fold_dict[m][fold_idx] for m in metric_names
+        ]
+
+    table_data["mean"] = means
+    table_data["std"] = stds
+
+    df_metrics_table = pd.DataFrame(table_data)
+    save_csv(
+        df_metrics_table,
+        METRICS_TABLE_CSV_PATH,
+        resource_type="results",
+        purpose="mlp_cv_metrics_table",
+        script_name="comportamiento_mlp_th03_v3.py",
+    )
+    print("[MLP] Tabla de métricas por fold guardada en:")
+    print(METRICS_TABLE_CSV_PATH)
+    print(df_metrics_table)
+
+       # ======================================================
+    # 📊 Gráfica — MLP Optimizado - 3-fold CV por métrica
+    # ======================================================
+    folds = np.arange(1, n_folds + 1)  # = [1, 2, 3]
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    for metric in metric_names:
+        scores = per_fold_dict[metric]
+        ax.plot(folds, scores, marker="o", label=metric)
+
+    ax.set_xticks(folds)
+    ax.set_xlabel("Fold")
+    ax.set_ylabel("Score")
+    ax.set_title("MLP Optimizado - 3-fold CV por métrica")
+    ax.legend()
+    fig.tight_layout()
+
+    mlp_folds_png = os.path.join(RESULTS_DIR, "mlp_cv_metrics_per_fold.png")
+    fig.savefig(mlp_folds_png, dpi=300)
+    plt.close(fig)
+    print(f"[MLP] Gráfica por fold guardada en: {mlp_folds_png}")
 
     # Entrenamiento final
     print("[MLP] Entrenando modelo final...")
@@ -349,15 +409,18 @@ def main():
     plt.close()
     print(f"[MLP] Matriz de confusión guardada en: {cm_path}")
 
-    # Gráfico de barras con métricas
+    # Gráfico de barras con métricas finales (test)
     plt.figure(figsize=(8, 6))
-    plt.bar(["accuracy", "precision", "recall", "f1"], [
-        scores["accuracy"],
-        scores["precision"],
-        scores["recall"],
-        scores["f1"],
-    ])
-    plt.title("Métricas del modelo MLP")
+    plt.bar(
+        ["accuracy", "precision", "recall", "f1"],
+        [
+            scores["accuracy"],
+            scores["precision"],
+            scores["recall"],
+            scores["f1"],
+        ],
+    )
+    plt.title("Métricas del modelo MLP (test)")
     metrics_img_path = os.path.join(RESULTS_DIR, "mlp_cv_metrics.png")
     plt.savefig(metrics_img_path, dpi=300)
     plt.close()
@@ -366,26 +429,11 @@ def main():
     # Exportar métricas finales como CSV (via save_csv)
     df_metrics = pd.DataFrame(
         [
-            {
-                "metric": "accuracy",
-                "value": scores["accuracy"],
-            },
-            {
-                "metric": "precision",
-                "value": scores["precision"],
-            },
-            {
-                "metric": "recall",
-                "value": scores["recall"],
-            },
-            {
-                "metric": "f1",
-                "value": scores["f1"],
-            },
-            {
-                "metric": "threshold",
-                "value": scores["threshold"],
-            },
+            {"metric": "accuracy",  "value": scores["accuracy"]},
+            {"metric": "precision", "value": scores["precision"]},
+            {"metric": "recall",    "value": scores["recall"]},
+            {"metric": "f1",        "value": scores["f1"]},
+            {"metric": "threshold", "value": scores["threshold"]},
         ]
     )
     save_csv(
