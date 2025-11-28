@@ -33,6 +33,9 @@ CSV_HEALTH = "data/sessions_health.csv"
 RESULTS_DIR = "results/isolationForest/"
 MODELS_DIR = "trained_models/isolationForest/"
 
+RESULTS_FOLDS_CSV = os.path.join(RESULTS_DIR, "iso_2.0_kfold_anomaly_rates.csv")
+RESULTS_STABILITY_CSV = os.path.join(RESULTS_DIR, "iso_2.0_stability_summary.csv")
+
 
 def plot_pca_clusters(X_transformed, labels, output_dir):
     """Métrica Extra: Visualiza la separación en espacio 2D."""
@@ -126,13 +129,77 @@ def main():
     )
 
     # ---------------------------------------------------
-    # Gráfica 1: porcentaje de anomalías por fold (barra)
+    # Guardar métricas por fold en CSV (log)
     # ---------------------------------------------------
     folds = np.arange(1, 7)
-    fold_metrics = [rate * 100 for rate in anomaly_rates]  # porcentaje
+    fold_metrics_pct = [r * 100 for r in anomaly_rates]
+    max_diff = max(fold_metrics_pct) - min(fold_metrics_pct)
 
+    meets_diff_5 = max_diff <= 5.0
+    meets_diff_3 = max_diff <= 3.0
+
+    df_folds = pd.DataFrame(
+        {
+            "fold": folds,
+            "anomaly_rate": anomaly_rates,
+            "anomaly_rate_pct": fold_metrics_pct,
+            "mean_rate": mean_rate,
+            "std_rate": std_rate,
+        }
+    )
+
+    save_csv(
+        df_folds,
+        RESULTS_FOLDS_CSV,
+        resource_type="data",
+        purpose="iso_kfold_anomaly_rates_v2",
+        script_name="sanidad_iso_v2.py",
+    )
+
+    # CSV de resumen de estabilidad 
+    df_summary = pd.DataFrame(
+        [
+            {
+                "metric": "mean_anomaly_rate",
+                "value": mean_rate * 100,
+            },
+            {
+                "metric": "std_anomaly_rate",
+                "value": std_rate * 100,
+            },
+            {
+                "metric": "max_diff_between_folds",
+                "value": max_diff,
+            },
+            {
+                "metric": "meets_diff<=5pct",
+                "value": meets_diff_5,
+            },
+            {
+                "metric": "meets_diff<=3pct",
+                "value": meets_diff_3,
+            },
+        ]
+    )
+
+    save_csv(
+        df_summary,
+        RESULTS_STABILITY_CSV,
+        resource_type="data",
+        purpose="iso_kfold_stability_summary_v2",
+        script_name="sanidad_iso_v2.py",
+    )
+
+    print(
+        f"[ISO] CSV de tasas por fold guardado en: {RESULTS_FOLDS_CSV}\n"
+        f"[ISO] CSV de resumen de estabilidad guardado en: {RESULTS_STABILITY_CSV}"
+    )
+
+    # ---------------------------------------------------
+    # Gráfica 1: porcentaje de anomalías por fold (barra)
+    # ---------------------------------------------------
     plt.figure(figsize=(8, 5))
-    bars = plt.bar(folds, fold_metrics, color="steelblue", alpha=0.8)
+    plt.bar(folds, fold_metrics_pct, color="steelblue", alpha=0.8)
     plt.axhline(
         mean_rate * 100,
         color="red",
@@ -143,7 +210,7 @@ def main():
     plt.xlabel("Número de Pliegue")
     plt.ylabel("Porcentaje de Anomalías Detectadas")
     plt.legend()
-    plt.ylim(0, max(fold_metrics) * 1.25)
+    plt.ylim(0, max(fold_metrics_pct) * 1.25)
 
     out_path = os.path.join(RESULTS_DIR, "iso_2.0_stability_folds.png")
     plt.savefig(out_path, dpi=300)
@@ -194,7 +261,7 @@ def main():
         threshold,
         color="red",
         linestyle="--",
-        label=f"Umbral Top {contamination*100:.2f}%",
+        label=f"Umbral Top {contamination*100:.0f}%",
     )
     plt.legend()
 

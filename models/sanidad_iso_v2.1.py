@@ -31,7 +31,7 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 # helpers de almacenamiento (S3 + logs)
-from util.storage import load_csv, save_model
+from util.storage import load_csv, save_model, save_csv
 
 # Configurar estilo de gráficos
 plt.style.use('ggplot')
@@ -124,6 +124,9 @@ def evaluate_stability(df, preprocessor, args):
     """
     ARTEFACTO REQUERIDO #1: Gráfico de Anomalías por Pliegue.
     Ejecuta Validación Cruzada K-Fold para verificar si la tasa de anomalías es estable.
+    Además:
+      - Guarda iso_2.1_kfold_anomaly_rates.csv
+      - Guarda iso_2.1_stability_summary.csv
     """
     print(f"\n--- Fase 1: Evaluación de Estabilidad ({args.k_folds}-Fold CV) ---")
 
@@ -162,8 +165,12 @@ def evaluate_stability(df, preprocessor, args):
         fold_indices.append(fold_i + 1)
 
     mean_rate = np.mean(fold_metrics)
+    std_rate = np.std(fold_metrics)
+    max_diff = max(fold_metrics) - min(fold_metrics)
+    meets_diff_5 = max_diff <= 5.0
+    meets_diff_3 = max_diff <= 3.0
 
-    # --- ARTEFACTO #1 ---
+    # --- ARTEFACTO #1: gráfica de barras por fold ---
     plt.figure(figsize=(8, 5))
     plt.bar(fold_indices, fold_metrics, color="steelblue", alpha=0.8)
     plt.axhline(
@@ -179,6 +186,70 @@ def evaluate_stability(df, preprocessor, args):
     plt.savefig(out_path, dpi=300)
     plt.close()
     print(f"Artefacto #1 (Gráfico de Estabilidad) guardado en {out_path}")
+
+    # ==========================
+    # Guardar métricas por fold en CSV (log)
+    # ==========================
+    folds_arr = np.arange(1, args.k_folds + 1)
+
+    df_folds = pd.DataFrame(
+        {
+            "fold": folds_arr,
+            "anomaly_rate_pct": fold_metrics,
+            "mean_rate_pct": mean_rate,
+            "std_rate_pct": std_rate,
+            "max_diff_between_folds_pct": max_diff,
+        }
+    )
+
+    results_folds_csv = os.path.join(args.results_dir, "iso_2.1_kfold_anomaly_rates.csv")
+    save_csv(
+        df_folds,
+        results_folds_csv,
+        resource_type="data",
+        purpose="iso_2_1_kfold_anomaly_rates",
+        script_name="sanidad_iso_v2.1.py",
+    )
+
+    # CSV de resumen de estabilidad
+    df_summary = pd.DataFrame(
+        [
+            {
+                "metric": "mean_anomaly_rate_pct",
+                "value": mean_rate,
+            },
+            {
+                "metric": "std_anomaly_rate_pct",
+                "value": std_rate,
+            },
+            {
+                "metric": "max_diff_between_folds_pct",
+                "value": max_diff,
+            },
+            {
+                "metric": "meets_diff<=5pct",
+                "value": meets_diff_5,
+            },
+            {
+                "metric": "meets_diff<=3pct",
+                "value": meets_diff_3,
+            },
+        ]
+    )
+
+    results_stability_csv = os.path.join(args.results_dir, "iso_2.1_stability_summary.csv")
+    save_csv(
+        df_summary,
+        results_stability_csv,
+        resource_type="data",
+        purpose="iso_2_1_kfold_stability_summary",
+        script_name="sanidad_iso_v2.1.py",
+    )
+
+    print(
+        f"[ISO 2.1] CSV de tasas por fold guardado en: {results_folds_csv}\n"
+        f"[ISO 2.1] CSV de resumen de estabilidad guardado en: {results_stability_csv}"
+    )
 
     return mean_rate
 
@@ -226,7 +297,7 @@ def main():
     # 1. Preparar Datos
     df_clean, preprocessor = preprocess_data(df_raw)
 
-    # 2. Generar Artefacto 1 (Gráfico de Estabilidad)
+    # 2. Generar Artefacto 1 (Gráfico de Estabilidad + CSVs métricas)
     evaluate_stability(df_clean, preprocessor, args)
 
     # 3. Entrenar Modelo Final (Dataset Completo)

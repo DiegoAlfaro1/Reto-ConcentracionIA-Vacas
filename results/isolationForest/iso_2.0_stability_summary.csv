@@ -1,0 +1,6 @@
+metric,value
+mean_anomaly_rate,4.972914585683385
+std_anomaly_rate,0.7630530711107654
+max_diff_between_folds,1.9851034801139291
+meets_diff<=5pct,True
+meets_diff<=3pct,True
