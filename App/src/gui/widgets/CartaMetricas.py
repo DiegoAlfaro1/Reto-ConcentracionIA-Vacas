@@ -54,10 +54,10 @@ class CartaMetricas( QtWidgets.QWidget ):
         MetricLayout = QtWidgets.QHBoxLayout()
 
         MetricLabel = QtWidgets.QLabel( self.metrica, objectName="Card-Text")
-        Metric = QtWidgets.QLabel( '5.32338', objectName="Card-Text")
+        self.Metric = QtWidgets.QLabel( '-', objectName="Card-Text")
         
         MetricLayout.addWidget(  MetricLabel )
-        MetricLayout.addWidget( Metric, alignment=aflag.AlignRight )
+        MetricLayout.addWidget( self.Metric, alignment=aflag.AlignRight )
         CardLayout.addLayout(  MetricLayout )
 
         # Línea divisora
@@ -72,9 +72,9 @@ class CartaMetricas( QtWidgets.QWidget ):
         ZValueLayout = QtWidgets.QHBoxLayout()
 
         ZValueLabel = QtWidgets.QLabel( 'Valor Z', objectName="Card-Text")
-        ZValue = QtWidgets.QLabel( '5.32338', objectName="Card-Text")
+        self.ZValue = QtWidgets.QLabel( '-', objectName="Card-Text")
         
         ZValueLayout.addWidget(  ZValueLabel )
-        ZValueLayout.addWidget( ZValue, alignment=aflag.AlignRight )
+        ZValueLayout.addWidget( self.ZValue, alignment=aflag.AlignRight )
         CardLayout.addLayout(  ZValueLayout )
 

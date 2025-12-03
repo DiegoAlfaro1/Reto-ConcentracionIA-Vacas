@@ -60,7 +60,28 @@ QScrollBar::handle:vertical:hover {
 #Card{
     background-color: #ffffff;
     border-radius: 1em;
+}
 
+#Card-Decition{
+    background-color: #ffffff;
+    border-radius: 1em;
+}
+
+#Card-Decition{
+    background-color: #ffffff;
+    border-radius: 1em;
+}
+
+#Card-Decition[state="Reproducir"]{
+    Border: 2px solid #0fa092;
+}
+
+#Card-Decition[state="Supervisar"]{
+    Border: 2px solid #a0960f;
+}
+
+#Card-Decition[state="Descartar"]{
+    Border: 2px solid #a0250f;
 }
 
 #Panel-Operativo-Container-Left{
@@ -149,60 +170,4 @@ QScrollBar::handle:vertical:hover {
 #Analize-Button:disabled{
     background-color: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 #3c3c3c , stop: 1 #575757);
 }
-/* #Tabs-Container{
-    background-color: #151515; 
-}
 
-#Title-Container{
-    background-color: #090909;
-}
-
-#Title-Twister{
-     color: #ffffff; 
-    background-color: #090909;
-    font-size: 24pt; 
-    max-height: 1.5em;
-}
-
-#Logo-Twister{
-    background-color: #090909;
-    max-height: 5em;
-    max-width: 4em;
-    padding-left: 0.5em;
-}
-
-#Titulo{
-    font-weight: 600;
-     color: #ffffff; 
-    font-size: 20pt; 
-    height: 1.5em;
-    max-height: 1.5em;
-    min-height: 1.5em;
-}
-
-
-
-#Subtitulo{
-    font-weight: 500;
-    background-color: #242424;
-     color: #ffffff; 
-    font-size: 16pt; 
-    max-height: 1em;
-     vertical-align: top;
-    text-align: top; 
-}
-
-#Text{
-    background-color: #242424;
-    font-weight: light;
-}
-
-
-
-#Card{
-    background-color: #242424;
-    border-radius: 0.25em;
-    border-left-style: solid;
-    border-left-width: 2px;
-     
-} */

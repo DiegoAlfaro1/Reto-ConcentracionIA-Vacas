@@ -87,24 +87,57 @@ class Contenido( QtWidgets.QWidget ):
         contentWidget.setLayout( MetricsLayout )
         # InfoLayout.addLayout( MetricsLayout )
 
-        CardProductividad = CartaMetricas('Productividad', 'Mérito productivo')
-        CardProductividad.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
-        MetricsLayout.addWidget( CardProductividad )
+        self.CardProductividad = CartaMetricas('Productividad', 'Mérito productivo')
+        self.CardProductividad.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
+        MetricsLayout.addWidget( self.CardProductividad )
 
-        CardComportamiento = CartaMetricas('Comportamiento', 'Riesgo de comportamiento')
-        CardComportamiento.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
-        MetricsLayout.addWidget( CardComportamiento )
+        self.CardComportamiento = CartaMetricas('Comportamiento', 'Riesgo de comportamiento')
+        self.CardComportamiento.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
+        MetricsLayout.addWidget( self.CardComportamiento )
 
-        CardSalud = CartaMetricas('Sanidad', 'Riesgo de sanidad')
-        CardSalud.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
-        MetricsLayout.addWidget( CardSalud )
+        self.CardSalud = CartaMetricas('Sanidad', 'Riesgo de sanidad')
+        self.CardSalud.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
+        MetricsLayout.addWidget( self.CardSalud )
 
 # ==================== Layout de resultados ====================
 
-        ResultsLayout = QtWidgets.QVBoxLayout()
-        ResultsLayout.setContentsMargins(25, 13, 25,25)
-        InfoLayout.addLayout( ResultsLayout )
+        InterpretationLayout = QtWidgets.QVBoxLayout()
+        InterpretationLayout.setContentsMargins(25, 13, 25,25)
+        InterpretationLayout.setSpacing(25)
+        InfoLayout.addLayout( InterpretationLayout )
+
+        ResultsLayout = QtWidgets.QHBoxLayout()
+        InterpretationLayout.addLayout( ResultsLayout )
+
+        CardIMR = Carta()
+        CardIMR.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
+        ResultsLayout.addWidget( CardIMR )
+
+        IMRLayout = QtWidgets.QHBoxLayout()
+        IMRLayout.setContentsMargins(0, 0, 0, 0)
+        IMRLayout.setSpacing(0)
+        CardIMR.addLayout( IMRLayout )
+
+        IMRLabel = QtWidgets.QLabel( 'IMR', objectName="Card-Title")
+        self.IMR = QtWidgets.QLabel( '-', objectName="Card-Text")
+        
+        IMRLayout.addWidget(  IMRLabel )
+        IMRLayout.addWidget( self.IMR, alignment=aflag.AlignRight )
+
+        self.DecitionCard = Carta()
+        self.DecitionCard.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
+        self.DecitionCard.setObjectName("Card-Decition")
+        DecitionLayout = QtWidgets.QHBoxLayout()
+        DecitionLabel = QtWidgets.QLabel( 'Decisión', objectName="Card-Title")
+        self.Decition = QtWidgets.QLabel( '-', objectName="Card-Text")
+
+        DecitionLayout.addWidget(  DecitionLabel )
+        DecitionLayout.addWidget( self.Decition, alignment=aflag.AlignRight )
+        self.DecitionCard.addLayout( DecitionLayout )
+
+        ResultsLayout.addWidget( self.DecitionCard )
+
 
 
         Card5 = Carta()
-        ResultsLayout.addWidget( Card5 )
+        InterpretationLayout.addWidget( Card5 )
