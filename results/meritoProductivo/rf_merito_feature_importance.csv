@@ -1,0 +1,58 @@
+feature,importance
+"('Flujos maximos (kg/min)', 'Total')",0.358168339136668
+"('Media de los flujos (kg/min)', 'Total')",0.1010927438463209
+"('Flujos maximos (kg/min)', 'DD')",0.0923984767706813
+"('Main', 'Produccion (kg)')",0.043525893581337016
+"('Media de los flujos (kg/min)', 'DI')",0.04223559242898538
+"('Conductividad (mS / cm)', 'TI')",0.03914937278981819
+"('Producciones (kg)', 'DI')",0.03344957844877351
+"('Producciones (kg)', 'Total')",0.030870485745662066
+"('Conductividad (mS / cm)', 'DI')",0.02990921752825032
+"('Flujos maximos (kg/min)', 'DI')",0.019781584868552464
+"('Media de los flujos (kg/min)', 'TD')",0.017293680692365705
+"('Datos Generados', 'prod_mean')",0.016926374737218315
+"('Media de los flujos (kg/min)', 'TI')",0.01358828574998064
+"('Flujos maximos (kg/min)', 'TD')",0.013155196022670578
+"('Producciones (kg)', 'TD')",0.012902548646721506
+"('Sangre (ppm)', 'TI')",0.011499642796653702
+"('Conductividad (mS / cm)', 'DD')",0.01088301587471693
+"('Flujos maximos (kg/min)', 'TI')",0.009871249628945637
+"('Media de los flujos (kg/min)', 'DD')",0.009567429793614276
+"('Conductividad (mS / cm)', 'TD')",0.009035264998058876
+"('Conductividad (mS / cm)', 'Total')",0.008893400617264355
+"('Producciones (kg)', 'DD')",0.00765788304757535
+"('Datos Generados', 'prod_std')",0.0065470900099542885
+"('Datos Generados', 'NoEncontradosDI')",0.0063336029303413584
+"('Producciones (kg)', 'Suavizado')",0.0058145598750141475
+"('Producciones (kg)', 'TI')",0.0058060550636285235
+"('Datos Generados', 'tasa_cambio_pvalor')",0.004083566856755483
+"('Sangre (ppm)', 'DD')",0.0040268504116637875
+"('Datos Generados', 'patadas_DI')",0.003735252408121724
+"('Datos Generados', 'TasaDecaemientoProduccion')",0.0036850746784697387
+"('Estado', 'Ubre')",0.0034563160074712164
+"('Datos Generados', 'PatadasPorOrdeño')",0.0028609974737360973
+"('Datos Generados', 'OrdeñosTotales')",0.0027994987365013604
+"('Datos Generados', 'prod_cv')",0.0020794116375696453
+"('Sangre (ppm)', 'DI')",0.002000200397273315
+"('Datos Generados', 'PatadasPorDia')",0.0017943887026617479
+"('Datos Generados', 'NoEncontradosTotal')",0.001509583421521655
+"('Sangre (ppm)', 'Total')",0.0014754518054456787
+"('Datos Generados', 'tasa_cambio_r2')",0.0013667644336445776
+"('Datos Generados', 'DuracionPromedio')",0.001211406465749062
+"('Datos Generados', 'patadas_TI')",0.001179404310031896
+"('Datos Generados', 'prod_max')",0.0011255165985350603
+"('Datos Generados', 'DiasTotales')",0.0009411430232600557
+"('Datos Generados', 'n_ordeños')",0.0008489388400559342
+"('Datos Generados', 'MastitisPromedio')",0.0006953915547137852
+"('Datos Generados', 'NoEncontradosTI')",0.0004747252604444112
+"('Datos Generados', 'patadas_total')",0.0004605132787809253
+"('Datos Generados', 'MastitisTotal')",0.0004276091159141231
+"('Datos Generados', 'NoEncontradosTD')",0.00035110197942932485
+"('Datos Generados', 'patadas_TD')",0.0003315602934693813
+"('Sangre (ppm)', 'TD')",0.00025470550253195044
+"('Datos Generados', 'PatadasPorHora')",0.0002121754455355445
+"('Datos Generados', 'NoEncontradosDD')",0.00013594571708833183
+"('Datos Generados', 'tasa_cambio_media_kg_dia')",7.421983114847352e-05
+"('Datos Generados', 'prod_min')",4.572018270230872e-05
+"('Datos Generados', 'patadas_DD')",0.0
+"('Estado', 'Numero de ordeño')",0.0
