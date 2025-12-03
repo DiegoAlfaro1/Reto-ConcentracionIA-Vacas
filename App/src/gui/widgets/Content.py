@@ -1,9 +1,9 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
-from src.gui.widgets.Carta import Carta
-from src.gui.widgets.CartaMetricas import CartaMetricas
+from src.gui.widgets.Card import Card
+from src.gui.widgets.CardMetrics import CardMetrics
 
 
-class Contenido( QtWidgets.QWidget ):
+class Content( QtWidgets.QWidget ):
     def __init__( self, parent = None):
         super().__init__( parent )
 
@@ -32,7 +32,7 @@ class Contenido( QtWidgets.QWidget ):
         CSVLayout.setContentsMargins(25, 25, 25, 12)
         ContentLayout.addLayout( CSVLayout )
 
-        CardCSV = Carta()
+        CardCSV = Card()
         CardCSV.setSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Maximum)
 
         CardCSVTitle = QtWidgets.QLabel( 
@@ -52,6 +52,7 @@ class Contenido( QtWidgets.QWidget ):
         self.AnalizeButton = QtWidgets.QPushButton( "Analizar datos" , objectName="Analize-Button" )
         self.AnalizeButton.setSizePolicy(QtWidgets.QSizePolicy.Policy.Maximum, QtWidgets.QSizePolicy.Policy.Preferred)
         self.AnalizeButton.setEnabled( False )
+        self.AnalizeButton.setToolTip("Elige un archivo CSV para habilitar el análisis de datos.")
         CSVUploadLayout.addWidget( self.AnalizeButton )
 
 
@@ -87,15 +88,15 @@ class Contenido( QtWidgets.QWidget ):
         contentWidget.setLayout( MetricsLayout )
         # InfoLayout.addLayout( MetricsLayout )
 
-        self.CardProductividad = CartaMetricas('Productividad', 'Mérito productivo')
+        self.CardProductividad = CardMetrics('Productividad', 'Mérito productivo')
         self.CardProductividad.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
         MetricsLayout.addWidget( self.CardProductividad )
 
-        self.CardComportamiento = CartaMetricas('Comportamiento', 'Riesgo de comportamiento')
+        self.CardComportamiento = CardMetrics('Comportamiento', 'Riesgo de comportamiento')
         self.CardComportamiento.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
         MetricsLayout.addWidget( self.CardComportamiento )
 
-        self.CardSalud = CartaMetricas('Sanidad', 'Riesgo de sanidad')
+        self.CardSalud = CardMetrics('Sanidad', 'Riesgo de sanidad')
         self.CardSalud.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
         MetricsLayout.addWidget( self.CardSalud )
 
@@ -109,7 +110,10 @@ class Contenido( QtWidgets.QWidget ):
         ResultsLayout = QtWidgets.QHBoxLayout()
         InterpretationLayout.addLayout( ResultsLayout )
 
-        CardIMR = Carta()
+        CardIMR = Card()
+
+        CardIMR.CardLayout.setContentsMargins(25, 15, 25, 15)
+
         CardIMR.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
         ResultsLayout.addWidget( CardIMR )
 
@@ -124,9 +128,11 @@ class Contenido( QtWidgets.QWidget ):
         IMRLayout.addWidget(  IMRLabel )
         IMRLayout.addWidget( self.IMR, alignment=aflag.AlignRight )
 
-        self.DecitionCard = Carta()
+        self.DecitionCard = Card()
         self.DecitionCard.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Maximum)
         self.DecitionCard.setObjectName("Card-Decition")
+        self.DecitionCard.CardLayout.setContentsMargins(25, 15, 25, 15)
+
         DecitionLayout = QtWidgets.QHBoxLayout()
         DecitionLabel = QtWidgets.QLabel( 'Decisión', objectName="Card-Title")
         self.Decition = QtWidgets.QLabel( '-', objectName="Card-Text")
@@ -139,5 +145,5 @@ class Contenido( QtWidgets.QWidget ):
 
 
 
-        Card5 = Carta()
+        Card5 = Card()
         InterpretationLayout.addWidget( Card5 )

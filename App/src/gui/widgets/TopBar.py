@@ -1,6 +1,6 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
 
-class BarraSuperior( QtWidgets.QWidget ):
+class TopBar( QtWidgets.QWidget ):
     def __init__( self, parent = None):
         super().__init__( parent )
 
@@ -33,7 +33,7 @@ class BarraSuperior( QtWidgets.QWidget ):
         TextLayout.addWidget( PanelOperativoTitle )
 
         PanelOperativoSubtitle = QtWidgets.QLabel( 
-            "Top de vacas según productividad, salud y genética", 
+            "Clasificación genética de vacas según patrones de salud, comportamiento y productividad.", 
             objectName="Subtitle-Panel-Operativo")
         PanelOperativoSubtitle.setAlignment( aflag.AlignLeft | aflag.AlignTop )
         PanelOperativoSubtitle.setWordWrap(True) 

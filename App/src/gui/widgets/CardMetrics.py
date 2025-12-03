@@ -1,9 +1,7 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
 
-from src.gui.widgets.Carta import Carta
 
-
-class CartaMetricas( QtWidgets.QWidget ):
+class CardMetrics( QtWidgets.QWidget ):
     def __init__( self, titulo, metrica, parent = None):
         super().__init__( parent )
         self.titulo = titulo
@@ -24,10 +22,10 @@ class CartaMetricas( QtWidgets.QWidget ):
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_StyledBackground, True)
 
         shadow = QtWidgets.QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(30)       # que tan difuminada es la sombra
-        shadow.setXOffset(0)           # desplazamiento horizontal
-        shadow.setYOffset(0)           # desplazamiento vertical
-        shadow.setColor(QtGui.QColor(0, 0, 0, 40))  # color con alpha para traslucidez
+        shadow.setBlurRadius(30)       
+        shadow.setXOffset(0)          
+        shadow.setYOffset(0)         
+        shadow.setColor(QtGui.QColor(0, 0, 0, 40))  
 
         self.setGraphicsEffect(shadow)
 

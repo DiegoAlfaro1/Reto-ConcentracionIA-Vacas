@@ -3,8 +3,8 @@ from PyQt6.QtGui import QCursor, QIcon
 
 from random import randint
 
-from src.gui.widgets.BarraSuperior import BarraSuperior
-from src.gui.widgets.Contenido import Contenido
+from src.gui.widgets.TopBar import TopBar
+from src.gui.widgets.Content import Content
 
 class PanelView( object ):
     def __init__( self ) -> None:
@@ -20,11 +20,11 @@ class PanelView( object ):
         MainVLayout.setContentsMargins(0, 0, 0, 0)
         MainVLayout.setSpacing(0)
 
-        TopBar = BarraSuperior()
+        TopBarWidget = TopBar()
 
-        self.BottomContent = Contenido()
+        self.BottomContent = Content()
 
-        MainVLayout.addWidget(TopBar)
+        MainVLayout.addWidget(TopBarWidget)
         MainVLayout.addWidget(self.BottomContent)
         parent.setLayout( MainVLayout )
         

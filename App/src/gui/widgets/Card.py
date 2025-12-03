@@ -1,6 +1,6 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
 
-class Carta( QtWidgets.QWidget ):
+class Card( QtWidgets.QWidget ):
     def __init__( self, parent = None):
         super().__init__( parent )
 
@@ -11,10 +11,10 @@ class Carta( QtWidgets.QWidget ):
         aflag = QtCore.Qt.AlignmentFlag
         
         # Contenedores para la barra de arriba con los textos y cuadro con información
-        CardLayout = QtWidgets.QVBoxLayout()
-        CardLayout.setContentsMargins(25, 25, 25, 25)
-        CardLayout.setSpacing(10)
-        self.setLayout(CardLayout)
+        self.CardLayout = QtWidgets.QVBoxLayout()
+        self.CardLayout.setContentsMargins(25, 25, 25, 25)
+        self.CardLayout.setSpacing(10)
+        self.setLayout(self.CardLayout)
         self.setObjectName("Card")
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_StyledBackground, True)
 
