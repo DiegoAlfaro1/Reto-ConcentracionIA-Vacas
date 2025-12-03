@@ -90,44 +90,99 @@ def main():
     cv_results = cross_validate(lr_pipeline, X, y, cv=cv, scoring=scoring)
 
     print("\n=== Resultados Regresión Logística (comportamiento) - 3 folds ===")
-    metrics_data = {"metric": [], "mean": [], "std": []}
+    metric_names = []
+    means = []
+    stds = []
+    per_fold_dict = {}
+
     for metric in scoring.keys():
         scores = cv_results[f"test_{metric}"]
-        metrics_data["metric"].append(metric)
-        metrics_data["mean"].append(scores.mean())
-        metrics_data["std"].append(scores.std())
-        print(f"{metric:9s}: mean={scores.mean():.3f}  std={scores.std():.3f}  folds={np.round(scores, 3)}")
+        metric_names.append(metric)
+        means.append(scores.mean())
+        stds.append(scores.std())
+        per_fold_dict[metric] = scores
 
-    # Guardar métricas en CSV (con logs)
-    df_metrics = pd.DataFrame(metrics_data)
-    metrics_path = os.path.join(RESULTS_DIR, "lr_cv_metrics.csv")
+        print(
+            f"{metric:9s}: "
+            f"mean={scores.mean():.3f}  std={scores.std():.3f}  "
+            f"folds={np.round(scores, 3)}"
+        )
+
+    # ==========================
+    # 4) Tabla de métricas por fold
+    # ==========================
+    n_folds = len(per_fold_dict[metric_names[0]])
+    table_data = {"metric": metric_names}
+
+    for fold_idx in range(n_folds):
+        col_name = f"fold_{fold_idx + 1}"
+        table_data[col_name] = [per_fold_dict[m][fold_idx] for m in metric_names]
+
+    table_data["mean"] = means
+    table_data["std"] = stds
+
+    df_metrics = pd.DataFrame(table_data)
+    metrics_path = os.path.join(RESULTS_DIR, "lr_cv_metrics_table.csv")
+
     save_csv(
         df_metrics,
         metrics_path,
         resource_type="results",
-        purpose="lr_comportamiento_cv_metrics",
+        purpose="lr_comportamiento_cv_metrics_table",
         script_name=SCRIPT_NAME,
     )
-    print(f"\nMétricas guardadas en: {metrics_path}")
+    print("\nTabla de métricas por fold guardada en:")
+    print(metrics_path)
+    print(df_metrics, "\n")
 
+        # ==========================
+    # 4.1) Métrica por fold (gráfico comparativo)
     # ==========================
-    # 4) Matriz de confusión
-    # ==========================
-    y_pred_cv = cross_val_predict(lr_pipeline, X, y, cv=cv)
-    cm = confusion_matrix(y, y_pred_cv)
+    metric_names = list(scoring.keys())  # ['accuracy','precision','recall','f1']
+    per_fold_dict = {metric: cv_results[f"test_{metric}"] for metric in metric_names}
 
-    fig, ax = plt.subplots()
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-    disp.plot(ax=ax, colorbar=False)
-    ax.set_title("Matriz de confusión - Regresión Logística (3-fold CV)")
+    folds = np.arange(1, 4)
+
+    fig, ax = plt.subplots(figsize=(8,5))
+    for metric in metric_names:
+        scores = per_fold_dict[metric]
+        ax.plot(folds, scores, marker="o", label=metric)
+
+    ax.set_xticks(folds)
+    ax.set_xlabel("Fold")
+    ax.set_ylabel("Score")
+    ax.set_title("Regresión Logística - 3-fold CV por métrica")
+    ax.legend()
     fig.tight_layout()
-    out_path = os.path.join(RESULTS_DIR, "lr_cv_confusion_matrix.png")
-    fig.savefig(out_path, dpi=300)
+
+    per_fold_png_path = os.path.join(RESULTS_DIR, "lr_cv_metrics_per_fold.png")
+    fig.savefig(per_fold_png_path, dpi=300)
     plt.close(fig)
-    print(f"Matriz de confusión guardada en: {out_path}")
+
+    print(f"Gráfica de métricas por fold guardada en: {per_fold_png_path}\n")
+
 
     # ==========================
-    # 5) Entrenar modelo final y guardar (con logs)
+    # 5) Visualización de métricas (HISTOGRAMA + BARPLOT MEAN±STD)
+    # ==========================
+    import seaborn as sns
+
+    # --- Histograma de distribución de métricas por fold ---
+    for metric in metric_names:
+        scores = per_fold_dict[metric]
+        plt.figure(figsize=(7,5))
+        sns.histplot(scores, kde=True, bins=8)
+        plt.title(f"Distribución CV - {metric}")
+        plt.xlabel(metric)
+        plt.ylabel("Frecuencia")
+        hist_path = os.path.join(RESULTS_DIR, f"lr_hist_{metric}.png")
+        plt.savefig(hist_path, dpi=300)
+        plt.close()
+        print(f"Histograma guardado en: {hist_path}")
+
+
+    # ==========================
+    # 6) Entrenar modelo final y guardar (con logs)
     # ==========================
     print("\nEntrenando modelo final con todos los datos...")
     lr_pipeline.fit(X, y)

@@ -211,6 +211,45 @@ def main():
     plt.legend()
     plt.ylim(0, max(fold_metrics) * 1.25)
 
+    # ------------------------------------------
+    # Guardar CSV con métricas comparables
+    # ------------------------------------------
+
+    max_diff = (max(anomaly_rates) - min(anomaly_rates)) * 100
+    diff_le_5 = max_diff <= 5   # cumple criterio aceptable
+    diff_le_3 = max_diff <= 3   # cumple criterio ideal
+
+    report_data = {
+        "metric": [
+            "mean_anomaly_rate",
+            "std_anomaly_rate",
+            "max_diff_between_folds",
+            "meets_diff<=5pct",
+            "meets_diff<=3pct",
+        ],
+        "value": [
+            mean_rate * 100,
+            std_rate * 100,
+            max_diff,
+            diff_le_5,
+            diff_le_3
+        ]
+    }
+
+    df_report = pd.DataFrame(report_data)
+
+    REPORT_PATH = os.path.join(RESULTS_DIR, "dbscan_health_report.csv")
+    save_csv(
+        df_report,
+        REPORT_PATH,
+        resource_type="data",
+        purpose="dbscan_health_report",
+        script_name="sanidad_clustering_base.py",
+    )
+
+    print(f"[DBSCAN] Reporte general guardado en: {REPORT_PATH}")
+    print(df_report)
+
     out_path = os.path.join(RESULTS_DIR, "dbscan_stability_folds.png")
     plt.savefig(out_path, dpi=300)
     plt.close()
