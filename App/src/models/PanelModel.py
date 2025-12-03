@@ -12,7 +12,7 @@ class PanelModel( QtWidgets.QWidget, PanelView ):
 
         # Setup User Interface
         self.setupUI( self )
-        # self.setCallbacks()
+        self.setCallbacks()   
 
 
 # ============================= General Logic =============================
@@ -26,7 +26,20 @@ class PanelModel( QtWidgets.QWidget, PanelView ):
 
 # ============ Asignar eventos a elementos de la interfaz ============
 
-    # def setCallbacks( self ):
+    def setCallbacks( self ):
 
         # Sensor
         # self.LoadButtonS.clicked.connect( self.ValidateConnectionSensor )
+        self.BottomContent.CSVUploadButton.clicked.connect( self.UploadCSVFile )
+        self.BottomContent.AnalizeButton.clicked.connect( self.ExecuteAnalysis )
+
+    def UploadCSVFile( self ):
+        self.file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Open File", "", "CSV Files (*.csv)")
+        if self.file_path:
+            print(f"Selected file: {self.file_path}")
+            self.BottomContent.CSVUploadButton.setText(self.file_path)
+            self.BottomContent.AnalizeButton.setEnabled(True)
+            # return file_path
+            
+    def ExecuteAnalysis( self ):
+        print("Executing data analysis...")

@@ -33,11 +33,9 @@ class PanelView( object ):
 
         TopBar = BarraSuperior()
 
-        BottomContent = Contenido()
+        self.BottomContent = Contenido()
 
         MainVLayout.addWidget(TopBar)
-        MainVLayout.addWidget(BottomContent)
+        MainVLayout.addWidget(self.BottomContent)
         parent.setLayout( MainVLayout )
         
-
-

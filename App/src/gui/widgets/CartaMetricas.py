@@ -18,7 +18,7 @@ class CartaMetricas( QtWidgets.QWidget ):
         # Contenedores para la barra de arriba con los textos y cuadro con información
         CardLayout = QtWidgets.QVBoxLayout()
         CardLayout.setContentsMargins(25, 25, 25, 25)
-        CardLayout.setSpacing(10)
+        CardLayout.setSpacing(5)
         self.setLayout(CardLayout)
         self.setObjectName("Card")
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -32,7 +32,7 @@ class CartaMetricas( QtWidgets.QWidget ):
         self.setGraphicsEffect(shadow)
 
 
-
+        # título
 
         CardTitle = QtWidgets.QLabel( 
             self.titulo,
@@ -41,15 +41,40 @@ class CartaMetricas( QtWidgets.QWidget ):
         CardTitle.setWordWrap(True) 
         CardLayout.addWidget(  CardTitle )
 
+        # Línea divisora
+
         hline = QtWidgets.QFrame()
         hline.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-        
-        hline.setFrameShadow(QtWidgets.QFrame.Shadow.Plain)
         hline.setObjectName("Line")
 
         CardLayout.addWidget( hline )
-        CardLayout.addWidget( hline )
 
-        MetricLabel = QtWidgets.QLabel( 
-            self.metrica,
-            objectName="Card-Title")
+        # Métrica
+
+        MetricLayout = QtWidgets.QHBoxLayout()
+
+        MetricLabel = QtWidgets.QLabel( self.metrica, objectName="Card-Text")
+        Metric = QtWidgets.QLabel( '5.32338', objectName="Card-Text")
+        
+        MetricLayout.addWidget(  MetricLabel )
+        MetricLayout.addWidget( Metric, alignment=aflag.AlignRight )
+        CardLayout.addLayout(  MetricLayout )
+
+        # Línea divisora
+
+        hline1 = QtWidgets.QFrame()
+        hline1.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+        hline1.setObjectName("Line")
+        CardLayout.addWidget( hline1 )
+
+        # Valor Z
+
+        ZValueLayout = QtWidgets.QHBoxLayout()
+
+        ZValueLabel = QtWidgets.QLabel( 'Valor Z', objectName="Card-Text")
+        ZValue = QtWidgets.QLabel( '5.32338', objectName="Card-Text")
+        
+        ZValueLayout.addWidget(  ZValueLabel )
+        ZValueLayout.addWidget( ZValue, alignment=aflag.AlignRight )
+        CardLayout.addLayout(  ZValueLayout )
+

@@ -1,19 +1,50 @@
-/* QMainWindow{
-    background-color: darkgray;
-    border: 3px solid #ffffff;
-} */
-
 QWidget{
     font-family:  Inter, Montserrat,Geneva,Verdana,Segoe UI,Tahoma,system-ui,Inter,sans-serif,    ;
-    /* background-color: #1c1c1c; */
     color: #ffffff;
     font-size: 12pt;
-    /* qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 #1c1c1c, stop: 1 #101010);  */
 }
 
 /* QLabel{
     background: transparent;
 } */
+
+/* QScrollArea > QWidget > QWidget {
+    background: #F4F6F8;
+} */
+
+QScrollArea QWidget {
+    background-color: #F4F6F8; /* o el color que busques */
+}
+
+QScrollArea{
+    min-height: 20em;
+    max-height: 20em;
+    background: transparent;
+    border: none;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background-color: #F4F6F8;
+}
+
+QScrollBar:vertical {
+    background: none;
+    width: 6px;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical {
+    background: #dadada;
+    border-radius: 3px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #9ac5c3;
+}
+
+
 
 
 #Top-Bar-Background{
@@ -63,8 +94,17 @@ QWidget{
 
 #Card-Title{
     color:#000000;
+    background-color: #ffffff;
     font-size: 12pt;
     font-weight: 700;
+    /* padding-bottom: 0.5em; */
+}
+
+#Card-Text{
+    color:#000000;
+    background-color: #ffffff;
+    font-size: 12pt;
+    font-weight: 400;
     /* padding-bottom: 0.5em; */
 }
 
@@ -83,7 +123,7 @@ QWidget{
 }
 
 #Line{
-    background-color: #000000;
+    background-color: #cccccc;
     height: 1px;
     max-height: 1px;
     border: none;
@@ -102,7 +142,12 @@ QWidget{
 }
 
 #Analize-Button:hover{
-    background-color: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 #198fa7 , stop: 1 #31c9ba);
+    background-color: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 #0c7286 , stop: 1 #12bdae);
+}
+
+
+#Analize-Button:disabled{
+    background-color: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 #3c3c3c , stop: 1 #575757);
 }
 /* #Tabs-Container{
     background-color: #151515; 
