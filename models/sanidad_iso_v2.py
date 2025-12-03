@@ -1,15 +1,15 @@
 # sanidad_iso_v2.py
-# Uso desde consola:
+# Uso desde consola (desde la raíz del repo):
 #   python3 models/sanidad_iso_v2.py
 #
 
 import os
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import shap
-import joblib 
 
 from sklearn.ensemble import IsolationForest
 from sklearn.impute import SimpleImputer
@@ -18,27 +18,42 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import KFold
 from sklearn.decomposition import PCA
 
-
 # Configurar estilo de gráficos
-plt.style.use('ggplot')
+plt.style.use("ggplot")
 
-CSV_HEALTH = "datos/sessions_health.csv"
+# --- asegurar raíz del proyecto en sys.path ---
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+# --- helpers de almacenamiento (S3 + logs) ---
+from util.storage import load_csv, save_csv, save_model
+
+CSV_HEALTH = "data/sessions_health.csv"
 RESULTS_DIR = "results/isolationForest/"
 MODELS_DIR = "trained_models/isolationForest/"
+
+RESULTS_FOLDS_CSV = os.path.join(RESULTS_DIR, "iso_2.0_kfold_anomaly_rates.csv")
+RESULTS_STABILITY_CSV = os.path.join(RESULTS_DIR, "iso_2.0_stability_summary.csv")
 
 
 def plot_pca_clusters(X_transformed, labels, output_dir):
     """Métrica Extra: Visualiza la separación en espacio 2D."""
     print("Generando Visualización PCA...")
-    # Reducir dimensionalidad a 2 componentes principales
     pca = PCA(n_components=2)
     X_pca = pca.fit_transform(X_transformed)
-    
+
     plt.figure(figsize=(10, 6))
-    label_text = np.where(labels == 1, 'Normal', 'Anomalía')
-    sns.scatterplot(x=X_pca[:,0], y=X_pca[:,1], hue=label_text, palette={'Normal': 'gray', 'Anomalía': 'red'}, alpha=0.6)
-    plt.title(f"Proyección PCA (Modelo Final)")
-    
+    label_text = np.where(labels == 1, "Normal", "Anomalía")
+    sns.scatterplot(
+        x=X_pca[:, 0],
+        y=X_pca[:, 1],
+        hue=label_text,
+        palette={"Normal": "gray", "Anomalía": "red"},
+        alpha=0.6,
+    )
+    plt.title("Proyección PCA (Modelo Final)")
+
     out_path = os.path.join(output_dir, "iso_2.0_pca_clusters.png")
     plt.savefig(out_path, dpi=300)
     plt.close()
@@ -50,12 +65,22 @@ def main():
     os.makedirs(RESULTS_DIR, exist_ok=True)
     os.makedirs(MODELS_DIR, exist_ok=True)
 
+    # ==========================
+    # 1) Cargar dataset (con logs / S3)
+    # ==========================
     print(f"Leyendo dataset de sanidad: {CSV_HEALTH}")
-    X = pd.read_csv(CSV_HEALTH)
+    X = load_csv(
+        CSV_HEALTH,
+        resource_type="data",
+        purpose="iso_sanidad_train_v2",
+        script_name="sanidad_iso_v2.py",
+    )
 
     print("Shape X_health:", X.shape)
 
-    # Pipeline: imputar -> escalar -> IsolationForest
+    # ==========================
+    # 2) Pipeline IsolationForest
+    # ==========================
     iso_pipeline = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="median")),
@@ -104,27 +129,96 @@ def main():
     )
 
     # ---------------------------------------------------
-    # Gráfica 1: porcentaje de anomalías por fold (barra) - ESTILO v2.1
+    # Guardar métricas por fold en CSV (log)
     # ---------------------------------------------------
     folds = np.arange(1, 7)
-    fold_metrics = [rate * 100 for rate in anomaly_rates]  # Convertir a porcentaje
+    fold_metrics_pct = [r * 100 for r in anomaly_rates]
+    max_diff = max(fold_metrics_pct) - min(fold_metrics_pct)
 
+    meets_diff_5 = max_diff <= 5.0
+    meets_diff_3 = max_diff <= 3.0
+
+    df_folds = pd.DataFrame(
+        {
+            "fold": folds,
+            "anomaly_rate": anomaly_rates,
+            "anomaly_rate_pct": fold_metrics_pct,
+            "mean_rate": mean_rate,
+            "std_rate": std_rate,
+        }
+    )
+
+    save_csv(
+        df_folds,
+        RESULTS_FOLDS_CSV,
+        resource_type="data",
+        purpose="iso_kfold_anomaly_rates_v2",
+        script_name="sanidad_iso_v2.py",
+    )
+
+    # CSV de resumen de estabilidad 
+    df_summary = pd.DataFrame(
+        [
+            {
+                "metric": "mean_anomaly_rate",
+                "value": mean_rate * 100,
+            },
+            {
+                "metric": "std_anomaly_rate",
+                "value": std_rate * 100,
+            },
+            {
+                "metric": "max_diff_between_folds",
+                "value": max_diff,
+            },
+            {
+                "metric": "meets_diff<=5pct",
+                "value": meets_diff_5,
+            },
+            {
+                "metric": "meets_diff<=3pct",
+                "value": meets_diff_3,
+            },
+        ]
+    )
+
+    save_csv(
+        df_summary,
+        RESULTS_STABILITY_CSV,
+        resource_type="data",
+        purpose="iso_kfold_stability_summary_v2",
+        script_name="sanidad_iso_v2.py",
+    )
+
+    print(
+        f"[ISO] CSV de tasas por fold guardado en: {RESULTS_FOLDS_CSV}\n"
+        f"[ISO] CSV de resumen de estabilidad guardado en: {RESULTS_STABILITY_CSV}"
+    )
+
+    # ---------------------------------------------------
+    # Gráfica 1: porcentaje de anomalías por fold (barra)
+    # ---------------------------------------------------
     plt.figure(figsize=(8, 5))
-    bars = plt.bar(folds, fold_metrics, color='steelblue', alpha=0.8)
-    plt.axhline(mean_rate * 100, color='red', linestyle='--', label=f'Media ({mean_rate*100:.2f}%)')
-    plt.title(f"Tasa de Anomalías por Pliegue (Verificación de Estabilidad)")
+    plt.bar(folds, fold_metrics_pct, color="steelblue", alpha=0.8)
+    plt.axhline(
+        mean_rate * 100,
+        color="red",
+        linestyle="--",
+        label=f"Media ({mean_rate*100:.2f}%)",
+    )
+    plt.title("Tasa de Anomalías por Pliegue (Verificación de Estabilidad)")
     plt.xlabel("Número de Pliegue")
     plt.ylabel("Porcentaje de Anomalías Detectadas")
     plt.legend()
-    plt.ylim(0, max(fold_metrics) * 1.25)
-    
+    plt.ylim(0, max(fold_metrics_pct) * 1.25)
+
     out_path = os.path.join(RESULTS_DIR, "iso_2.0_stability_folds.png")
     plt.savefig(out_path, dpi=300)
     plt.close()
     print(f"Gráfica de porcentaje de anomalías guardada en: {out_path}")
 
     # ------------------------
-    # Entrenar IsolationForest final con todos los datos
+    # 3) Entrenar IsolationForest final con todos los datos
     # ------------------------
     print("\nEntrenando IsolationForest final con todos los datos...")
     iso_pipeline.fit(X)
@@ -135,7 +229,7 @@ def main():
     iso_model = iso_pipeline.named_steps["iso"]
 
     anomaly_scores = -iso_model.score_samples(X_scaled)  # mayor = más raro
-    anomaly_labels = iso_model.predict(X_scaled)         # -1 = anómalo, 1 = normal
+    anomaly_labels = iso_model.predict(X_scaled)  # -1 = anómalo, 1 = normal
 
     df_results = X.copy()
     df_results["health_anomaly_score"] = anomaly_scores
@@ -152,21 +246,25 @@ def main():
     )
 
     # ---------------------------------------------------
-    # Gráfica 2: histograma de anomaly_score - ESTILO v2.1
+    # Gráfica 2: histograma de anomaly_score
     # ---------------------------------------------------
     print("Generando Histograma de Puntuaciones de Anomalías...")
     plt.figure(figsize=(10, 6))
-    sns.histplot(anomaly_scores, bins=50, kde=True, color='purple')
+    sns.histplot(anomaly_scores, bins=50, kde=True, color="purple")
     plt.title("Distribución de Puntuaciones de Anomalías (Modelo Final)")
     plt.xlabel("Puntuación de Anomalía (Mayor = Más Raro)")
     plt.ylabel("Frecuencia")
-    
-    # Agregar una línea para el umbral aproximado
+
     contamination = 0.05
     threshold = np.percentile(anomaly_scores, 100 * (1 - contamination))
-    plt.axvline(threshold, color='red', linestyle='--', label=f'Umbral Top {contamination*100}%')
+    plt.axvline(
+        threshold,
+        color="red",
+        linestyle="--",
+        label=f"Umbral Top {contamination*100:.0f}%",
+    )
     plt.legend()
-    
+
     out_path = os.path.join(RESULTS_DIR, "iso_2.0_score_histogram.png")
     plt.savefig(out_path, dpi=300)
     plt.close()
@@ -176,7 +274,7 @@ def main():
     # Métrica Extra: Visualización PCA
     # ---------------------------------------------------
     plot_pca_clusters(X_scaled, anomaly_labels, RESULTS_DIR)
-    
+
     # ---------------------------------------------------
     # Métrica Extra: SHAP para explicabilidad
     # ---------------------------------------------------
@@ -187,19 +285,24 @@ def main():
         plt.figure()
         shap.summary_plot(shap_values, X_scaled, show=False)
         shap_path = os.path.join(RESULTS_DIR, "iso_2.0_shap.png")
-        plt.savefig(shap_path, bbox_inches='tight')
+        plt.savefig(shap_path, bbox_inches="tight")
         plt.close()
         print(f"Gráfica SHAP guardada en: {shap_path}")
     except Exception as e:
         print(f"No se pudo generar gráfica SHAP: {e}")
 
-    # Guardar el pipeline completo (imputer + scaler + IsolationForest)
+    # ---------------------------------------------------
+    # 4) Guardar modelo final (local + S3 + log)
+    # ---------------------------------------------------
     model_path = os.path.join(MODELS_DIR, "iso_sanidad_pipeline_v2.joblib")
-    joblib.dump(iso_pipeline, model_path)
+    save_model(
+        iso_pipeline,
+        model_path,
+        resource_type="model",
+        purpose="iso_sanidad_final_v2",
+        script_name="sanidad_iso_v2.py",
+    )
     print(f"Pipeline de Isolation Forest guardado en: {model_path}")
-
-    # Opcional: guardar dataset enriquecido con scores
-    # df_results.to_csv("../data/sessions_health_with_iso.csv", index=False)
     print("\nModelo IsolationForest entrenado y aplicado a todas las sesiones.")
 
 

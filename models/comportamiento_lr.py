@@ -1,6 +1,8 @@
-# models/comportamiento_rf_v2.py
+# comportamiento_lr.py
+# Regresión Logística para predicción de comportamiento (inquieta/tranquila)
+# Modelo de línea base para comparación con modelos más complejos
 # Uso desde consola (desde la raíz del repo):
-#   python3 models/comportamiento_rf_v2.py
+#   python3 models/comportamiento_lr.py
 
 import os
 import sys
@@ -8,7 +10,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
@@ -24,12 +26,13 @@ if ROOT_DIR not in sys.path:
 from util.storage import load_csv, save_csv, save_model
 
 CSV_BEHAVIOR = "data/sessions_behavior.csv"
-RESULTS_DIR = "results/randomForest/"
-MODELS_DIR = "trained_models/randomForest/"
+RESULTS_DIR = "results/logisticRegression/"
+MODELS_DIR = "trained_models/logisticRegression/"
+
+SCRIPT_NAME = "comportamiento_lr.py"
 
 
 def main():
-    # Crear directorios de resultados y modelos (por si acaso)
     os.makedirs(RESULTS_DIR, exist_ok=True)
     os.makedirs(MODELS_DIR, exist_ok=True)
 
@@ -40,8 +43,8 @@ def main():
     df = load_csv(
         CSV_BEHAVIOR,
         resource_type="data",
-        purpose="rf_comportamiento_train_v2",
-        script_name="comportamiento_rf_v2.py",
+        purpose="lr_comportamiento_train_baseline",
+        script_name=SCRIPT_NAME,
     )
 
     # Separar features y target
@@ -53,21 +56,18 @@ def main():
     print(y.value_counts(), "\n")
 
     # ==========================
-    # 2) Definir pipeline de Random Forest
+    # 2) Definir pipeline de Regresión Logística
     # ==========================
-    rf_pipeline = Pipeline(
+    lr_pipeline = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="median")),
             ("scaler", StandardScaler()),
             (
-                "rf",
-                RandomForestClassifier(
-                    n_estimators=200,
-                    max_depth=8,
-                    min_samples_leaf=5,
+                "lr",
+                LogisticRegression(
                     class_weight="balanced",
+                    max_iter=1000,
                     random_state=42,
-                    n_jobs=-1,
                 ),
             ),
         ]
@@ -87,16 +87,9 @@ def main():
     # 3) Cross-validation
     # ==========================
     print("Ejecutando 3-fold cross-validation...")
-    cv_results = cross_validate(
-        rf_pipeline,
-        X,
-        y,
-        cv=cv,
-        scoring=scoring,
-        n_jobs=-1,
-    )
+    cv_results = cross_validate(lr_pipeline, X, y, cv=cv, scoring=scoring)
 
-    print("\n=== Resultados Random Forest (comportamiento) - 3 folds ===")
+    print("\n=== Resultados Regresión Logística (comportamiento) - 3 folds ===")
     metric_names = []
     means = []
     stds = []
@@ -116,61 +109,41 @@ def main():
         )
 
     # ==========================
-    # 4) Tabla de métricas por fold (CSV)
+    # 4) Tabla de métricas por fold
     # ==========================
     n_folds = len(per_fold_dict[metric_names[0]])
     table_data = {"metric": metric_names}
 
     for fold_idx in range(n_folds):
         col_name = f"fold_{fold_idx + 1}"
-        table_data[col_name] = [
-            per_fold_dict[m][fold_idx] for m in metric_names
-        ]
+        table_data[col_name] = [per_fold_dict[m][fold_idx] for m in metric_names]
 
     table_data["mean"] = means
     table_data["std"] = stds
 
     df_metrics = pd.DataFrame(table_data)
-    metrics_csv_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_table_v2.csv")
+    metrics_path = os.path.join(RESULTS_DIR, "lr_cv_metrics_table.csv")
 
-    # 👉 guardar con save_csv para que vaya a S3 + log
     save_csv(
         df_metrics,
-        metrics_csv_path,
+        metrics_path,
         resource_type="results",
-        purpose="rf_cv_metrics_v2",
-        script_name="comportamiento_rf_v2.py",
+        purpose="lr_comportamiento_cv_metrics_table",
+        script_name=SCRIPT_NAME,
     )
-
     print("\nTabla de métricas por fold guardada en:")
-    print(metrics_csv_path)
+    print(metrics_path)
     print(df_metrics, "\n")
 
+        # ==========================
+    # 4.1) Métrica por fold (gráfico comparativo)
     # ==========================
-    # 5) Gráfica: barra media ± std
-    # ==========================
-    x = np.arange(len(metric_names))
+    metric_names = list(scoring.keys())  # ['accuracy','precision','recall','f1']
+    per_fold_dict = {metric: cv_results[f"test_{metric}"] for metric in metric_names}
 
-    fig, ax = plt.subplots()
-    ax.bar(x, means, yerr=stds, capsize=5)
-    ax.set_xticks(x)
-    ax.set_xticklabels(metric_names)
-    ax.set_ylabel("Score")
-    ax.set_title("Random Forest - 3-fold CV (métrica promedio ± std)")
-    fig.tight_layout()
+    folds = np.arange(1, 4)
 
-    bar_png_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_bar_v2.png")
-    fig.savefig(bar_png_path, dpi=300)
-    plt.close(fig)
-    print(f"Gráfica de métricas promedio guardada en: {bar_png_path}")
-    # (si quieres también mandar PNGs a S3, luego hacemos un helper save_artifact)
-
-    # ==========================
-    # 6) Gráfica: métricas por fold
-    # ==========================
-    folds = np.arange(1, n_folds + 1)
-
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(8,5))
     for metric in metric_names:
         scores = per_fold_dict[metric]
         ax.plot(folds, scores, marker="o", label=metric)
@@ -178,53 +151,51 @@ def main():
     ax.set_xticks(folds)
     ax.set_xlabel("Fold")
     ax.set_ylabel("Score")
-    ax.set_title("Random Forest - 3-fold CV por métrica")
+    ax.set_title("Regresión Logística - 3-fold CV por métrica")
     ax.legend()
     fig.tight_layout()
 
-    per_fold_png_path = os.path.join(RESULTS_DIR, "rf_cv_metrics_per_fold_v2.png")
+    per_fold_png_path = os.path.join(RESULTS_DIR, "lr_cv_metrics_per_fold.png")
     fig.savefig(per_fold_png_path, dpi=300)
     plt.close(fig)
-    print(f"Gráfica de métricas por fold guardada en: {per_fold_png_path}")
+
+    print(f"Gráfica de métricas por fold guardada en: {per_fold_png_path}\n")
+
 
     # ==========================
-    # 7) Matriz de confusión
+    # 5) Visualización de métricas (HISTOGRAMA + BARPLOT MEAN±STD)
     # ==========================
-    print("\nCalculando matriz de confusión con cross_val_predict...")
-    y_pred_cv = cross_val_predict(
-        rf_pipeline, X, y, cv=cv, n_jobs=-1
-    )
+    import seaborn as sns
 
-    cm = confusion_matrix(y, y_pred_cv)
-    fig, ax = plt.subplots()
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-    disp.plot(ax=ax, colorbar=False)
-    ax.set_title("Matriz de confusión - Random Forest (3-fold CV)")
-    fig.tight_layout()
+    # --- Histograma de distribución de métricas por fold ---
+    for metric in metric_names:
+        scores = per_fold_dict[metric]
+        plt.figure(figsize=(7,5))
+        sns.histplot(scores, kde=True, bins=8)
+        plt.title(f"Distribución CV - {metric}")
+        plt.xlabel(metric)
+        plt.ylabel("Frecuencia")
+        hist_path = os.path.join(RESULTS_DIR, f"lr_hist_{metric}.png")
+        plt.savefig(hist_path, dpi=300)
+        plt.close()
+        print(f"Histograma guardado en: {hist_path}")
 
-    cm_png_path = os.path.join(RESULTS_DIR, "rf_cv_confusion_matrix.png")
-    fig.savefig(cm_png_path, dpi=300)
-    plt.close(fig)
-    print(f"Matriz de confusión guardada en: {cm_png_path}")
 
     # ==========================
-    # 8) Entrenar modelo final y guardar (S3 + log)
+    # 6) Entrenar modelo final y guardar (con logs)
     # ==========================
     print("\nEntrenando modelo final con todos los datos...")
-    rf_pipeline.fit(X, y)
-    print("Modelo entrenado.")
+    lr_pipeline.fit(X, y)
 
-    model_path = os.path.join(MODELS_DIR, "comportamiento_rf_pipeline_v2.joblib")
-
+    model_path = os.path.join(MODELS_DIR, "comportamiento_lr_pipeline.joblib")
     save_model(
-        rf_pipeline,
+        lr_pipeline,
         model_path,
         resource_type="model",
-        purpose="rf_comportamiento_final_v2",
-        script_name="comportamiento_rf_v2.py",
+        purpose="lr_comportamiento_baseline_final",
+        script_name=SCRIPT_NAME,
     )
-
-    print(f"Pipeline de Random Forest guardado en: {model_path}")
+    print(f"Pipeline guardado en: {model_path}")
 
 
 if __name__ == "__main__":
