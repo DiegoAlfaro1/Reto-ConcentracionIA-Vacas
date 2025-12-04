@@ -1,0 +1,216 @@
+/* ================== Estilo de letra de toda la aplicación por defecto ================== */
+QWidget{
+    font-family:  Inter, Montserrat,Geneva,Verdana,Segoe UI,Tahoma,system-ui,Inter,sans-serif,    ;
+    color: #ffffff;
+    font-size: 12pt;
+}
+
+/* ================== Barra superior ================== */
+
+#Top-Bar-Background{
+    background-color: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 #0a5e6f, stop: 1 #0fa092); 
+}
+
+/* ================== Texto de la barra superior ================== */
+
+#Title-Panel-Operativo{
+    color:#ffffff;
+    font-size: 12pt;
+    font-weight: 600;
+}
+
+#Subtitle-Panel-Operativo{
+    color:#ffffff;
+    font-size: 24pt;
+    font-weight: 900;
+}
+
+#Description-Panel-Operativo{
+    color:#dddddd;
+    font-size: 12pt;
+    font-weight: 400;
+}
+
+/* ================== Contenido (parte de abajo) ================== */
+
+#Content-Background{
+    background-color: #F4F6F8; 
+}
+
+/* ================== Carta ================== */
+
+#Card{
+    background-color: #ffffff;
+    border-radius: 1em;
+}
+
+/* ================== Carta de decisión ================== */
+
+#Card-Decition{
+    background-color: #ffffff;
+    border-radius: 1em;
+}
+
+#Card-Decition{
+    background-color: #ffffff;
+    border-radius: 1em;
+}
+
+#Card-Decition[state="Reproducir"]{
+    Border: 2px solid #0fa092;
+}
+
+#Card-Decition[state="Supervisar"]{
+    Border: 2px solid #a0960f;
+}
+
+#Card-Decition[state="Descartar"]{
+    Border: 2px solid #a0250f;
+}
+
+#Panel-Operativo-Container-Left{
+    border-radius: 1.5em;
+    border: 1px solid rgba(255, 255, 255, 128);
+    background-color: rgba(255, 255, 255, 64); 
+}
+
+
+/* ================== Texto de las cartas ================== */
+
+#Card-Title{
+    color:#000000;
+    background-color: #ffffff;
+    font-size: 12pt;
+    font-weight: 700;
+}
+
+#Card-Text{
+    color:#000000;
+    background-color: #ffffff;
+    font-size: 12pt;
+    font-weight: 400;
+}
+
+/* ================== Botón de subir CSV ================== */
+
+#CSV-Upload-Button{
+    background-color: #ffffff;
+    color: #000000;
+    font-size: 12pt;
+    font-weight: 400;
+    border-radius: 1em;
+    padding: 0.5em 0.5em 0.5em 0.5em;
+    border: 2px dashed #9b9b9b;
+}
+
+#CSV-Upload-Button:hover{
+    border: 2px dashed #0fa092;
+}
+
+/* ================== Línea separadora ================== */
+#Line{
+    background-color: #cccccc;
+    height: 1px;
+    max-height: 1px;
+    border: none;
+}
+
+/* ================== Botón de analizar ================== */
+#Analize-Button{
+    background-color: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 #0a5e6f, stop: 1 #0fa092);
+    color: #ffffff;
+    font-size: 12pt;
+    font-weight: 600;
+    border-radius: 1em;
+    padding: 0.5em 1em 0.5em 1em;
+    border: none;
+}
+
+#Analize-Button:hover{
+    background-color: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 #0c7286 , stop: 1 #12bdae);
+}
+
+#Analize-Button:pressed{
+    background-color: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 #0a5e6f, stop: 1 #0fa092);
+}
+
+#Analize-Button:disabled{
+    background-color: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 #3c3c3c , stop: 1 #575757);
+}
+
+/* ================== Alerta por CSV incorrecto ================== */
+
+QMessageBox {
+    background-color: #ffffff;
+    border-radius: 1em;
+}
+
+QMessageBox QLabel {
+    color: #000000;
+    font-size: 12pt;
+    font-family: Inter, Montserrat, Geneva, Verdana, Segoe UI, Tahoma, system-ui, sans-serif;
+}
+
+QMessageBox QPushButton {
+    background-color: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 #0a5e6f, stop: 1 #0fa092);
+    color: #ffffff;
+    border-radius: 0.5em;
+    padding: 0.25em 0.5em;
+}
+
+QMessageBox QPushButton:hover {
+    background-color: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 #0c7286 , stop: 1 #12bdae);
+}
+
+QMessageBox QPushButton:pressed {
+    background-color: qlineargradient(x1: 0, y1: 1, x2: 1, y2: 1, stop: 0 #0a5e6f, stop: 1 #0fa092);
+}
+
+/* ================== Zona de scroll ================== */
+
+QScrollArea QWidget {
+    background-color: #F4F6F8;
+}
+
+#ScrollArea2 QWidget {
+    background-color: #ffffff;
+}
+
+#ScrollArea2 #Line{
+    background-color: #cccccc;
+}
+
+QScrollArea{
+    min-height: 5em;
+    /* max-height: 15em; */
+    background: transparent;
+    border: none;
+}
+
+#ScrollArea2{
+    /* min-height: 10em; */
+    max-height: 15em;
+    background: transparent;
+    border: none;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background-color: #F4F6F8;
+}
+
+QScrollBar:vertical {
+    background: none;
+    width: 6px;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical {
+    background: #dadada;
+    border-radius: 3px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #9ac5c3;
+}
