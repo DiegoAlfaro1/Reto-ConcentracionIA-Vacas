@@ -182,3 +182,7 @@ python3 util/merito_productivo.py
 <code>
 python3 integration_v1.py --csv [path csv ]--cow-id [id]
 </code>
+
+
+Enlace al ejecutable en drive
+https://drive.google.com/drive/folders/1Chbv8hwPDWoOUGgCj04QNw6Bo-7rrwj-?usp=drive_link
