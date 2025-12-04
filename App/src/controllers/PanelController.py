@@ -4,7 +4,7 @@ from src.gui.views.PanelView import PanelView
 from src.libs.integration_v2 import compute_imr_for_cow
 # from src.libs.serial_com import SerialCom
 
-class PanelModel( QtWidgets.QWidget, PanelView ):
+class PanelController( QtWidgets.QWidget, PanelView ):
     def __init__(self, parent = None, *args ) -> None:
         super().__init__(parent, *args)
 

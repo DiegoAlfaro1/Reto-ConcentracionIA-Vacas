@@ -1,15 +1,15 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
 
 # Import Widgets
-from src.models.PanelModel import PanelModel
+from src.controllers.PanelController import PanelController
 
 
 class WindowRender( object ):
     def setupUI(self, MainWindow : QtWidgets.QMainWindow ):
-        MainWindow.setWindowTitle("CowRank")
-        MainWindow.setObjectName("CowRank-MainWindow")
+        MainWindow.setWindowTitle("Vacómetro")
+        MainWindow.setObjectName("Vacometro-MainWindow")
         MainWindow.resize(1280, 720)
-        MainWindow.setWindowIcon(QtGui.QIcon("src/resources/icons/" + "CowRankLogo.png"))
+        MainWindow.setWindowIcon(QtGui.QIcon("src/resources/icons/" + "VacometroLogo.png"))
         # MainWindow.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         
         
@@ -29,7 +29,7 @@ class WindowRender( object ):
         mlayout.setContentsMargins(0, 0, 0, 0) #Quitar el espacio muerto alrededor de todo.
         mlayout.setSpacing(0)
 
-        self.panel = PanelModel( widget )
+        self.panel = PanelController( widget )
 
         mlayout.addWidget( self.panel )
 

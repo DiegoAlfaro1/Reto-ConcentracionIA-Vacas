@@ -172,9 +172,24 @@ QScrollArea QWidget {
     background-color: #F4F6F8;
 }
 
+#ScrollArea2 QWidget {
+    background-color: #ffffff;
+}
+
+#ScrollArea2 #Line{
+    background-color: #cccccc;
+}
+
 QScrollArea{
-    min-height: 20em;
-    max-height: 20em;
+    min-height: 5em;
+    /* max-height: 15em; */
+    background: transparent;
+    border: none;
+}
+
+#ScrollArea2{
+    /* min-height: 10em; */
+    max-height: 15em;
     background: transparent;
     border: none;
 }

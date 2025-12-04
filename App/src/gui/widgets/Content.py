@@ -1,6 +1,7 @@
 from PyQt6 import QtWidgets, QtCore, QtGui
 from src.gui.widgets.Card import Card
 from src.gui.widgets.CardMetrics import CardMetrics
+from src.gui.widgets.Interpretation import Interpretation
 
 
 class Content( QtWidgets.QWidget ):
@@ -147,3 +148,7 @@ class Content( QtWidgets.QWidget ):
 
         Card5 = Card()
         InterpretationLayout.addWidget( Card5 )
+
+        InterpretationWidget = Interpretation()
+
+        Card5.addWidget( InterpretationWidget )

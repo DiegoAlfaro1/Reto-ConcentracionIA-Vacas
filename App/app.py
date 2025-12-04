@@ -4,7 +4,7 @@ from PyQt6 import QtGui
 
 import ctypes
 
-myappid = 'Concentrados.CowRank.subproduct.0.1.5' # arbitrary string
+myappid = 'ConcentradosV2.Vacometro.subproduct.0.1.5' # arbitrary string
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 if __name__ == "__main__":
