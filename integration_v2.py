@@ -366,13 +366,13 @@ W_S = 0.3   # peso del riesgo sanitario
 
 # Estos valores deben obtenerse del dataset global:
 # medias y desviaciones estándar para Z(x) = (x - mu) / sigma
-MU_G, SIG_G = 0.0, 1.0   # TODO: media y sigma reales de MéritoProductivo
-MU_C, SIG_C = 0.5, 0.1   # TODO: media y sigma reales de RiesgoComportamiento
-MU_S, SIG_S = 0.5, 0.1   # TODO: media y sigma reales de RiesgoSanidad
+MU_G, SIG_G = 0.0, 1.0   
+MU_C, SIG_C = 0.5, 0.1   
+MU_S, SIG_S = 0.5, 0.1  
 
 # Umbrales p40 y p75 de la distribución global del IMR
-P40_IMR = -0.2   # TODO: percentil 40 real
-P75_IMR =  0.5   # TODO: percentil 75 real
+P40_IMR = -0.2   
+P75_IMR =  0.5  
 
 
 def z_score(x: float, mu: float, sigma: float) -> float:

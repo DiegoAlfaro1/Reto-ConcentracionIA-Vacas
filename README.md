@@ -18,14 +18,18 @@ Luis Adrián Uribe Cruz - A01783129
 
 ## Indice de links
 
-- [`Business Understanding`](https://github.com/DiegoAlfaro1/Reto-ConcentracionIA-Vacas/blob/main/Documentaci%C3%B3n%20CRISP-DM/Business%20Understanding.pdf)
-- [`Data Understanding`](https://github.com/DiegoAlfaro1/Reto-ConcentracionIA-Vacas/blob/main/Documentaci%C3%B3n%20CRISP-DM/Data%20Preparation.pdf)
-- [`Data Preparation`](https://github.com/DiegoAlfaro1/Reto-ConcentracionIA-Vacas/blob/main/Documentaci%C3%B3n%20CRISP-DM/Data%20Understanding.pdf)
-- [`Modelado`](https://docs.google.com/document/d/1ij_Z6rscloFkTmMU2RQvtyWRKz3KUUbD3AR-JPQDoO0/edit?usp=drive_link)
-- [`Plan de valor ganado`](https://docs.google.com/spreadsheets/d/12ubunIKMkxzAnnMMdO_UpgfDZ-DNtL5uD4X8DdFFTCw/edit?usp=drive_link)
-- [`Politica de Datos y Acceso`](https://github.com/DiegoAlfaro1/Reto-ConcentracionIA-Vacas/blob/main/Documentaci%C3%B3n%20CRISP-DM/Politica%20de%20Datos%20y%20Acceso.pdf)
+## 📂 Documentación CRISP-DM
 
-[Link](https://drive.google.com/drive/u/1/folders/1E_7hHlKTfgszawLt3X5qVyLl47rKrEi5) a la carpeta completa de drive
+Cada archivo puede consultarse haciendo clic en su nombre:
+
+- [Despliegue](Documentación%20CRISP-DM/Despliegue.pdf)
+- [Entendimiento de negocio](Documentación%20CRISP-DM/Entedimiento%20de%20negocio.pdf)
+- [Entendimiento de datos](Documentación%20CRISP-DM/Entendimiento%20de%20datos.pdf)
+- [Evaluación](Documentación%20CRISP-DM/Evaluacion.pdf)
+- [Modelado](Documentación%20CRISP-DM/Modelado.pdf)
+- [Política de Datos y Acceso](Documentación%20CRISP-DM/Politica%20de%20Datos%20y%20Acceso.pdf)
+- [Preparación de datos](Documentación%20CRISP-DM/Preparacion%20de%20datos.pdf)
+- [Reporte final](Documentación%20CRISP-DM/Reporte%20final.pdf)
 
 ## Configuración del entorno virtual (venv)
 
