@@ -23,7 +23,7 @@ Luis Adrián Uribe Cruz - A01783129
 Cada archivo puede consultarse haciendo clic en su nombre:
 
 - [Despliegue](Documentación%20CRISP-DM/Despliegue.pdf)
-- [Entendimiento de negocio](Documentación%20CRISP-DM/Entedimiento%20de%20negocio.pdf)
+- [Entendimiento de negocio](Documentación%20CRISP-DM/Entendimiento%20de%20negocio.pdf)
 - [Entendimiento de datos](Documentación%20CRISP-DM/Entendimiento%20de%20datos.pdf)
 - [Evaluación](Documentación%20CRISP-DM/Evaluacion.pdf)
 - [Modelado](Documentación%20CRISP-DM/Modelado.pdf)
